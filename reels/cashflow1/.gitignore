@@ -1,0 +1,11 @@
+raw.mp4
+fx.wav
+bed.wav
+mix.wav
+*.html
+stills/
+chk/
+*.jpg
+!cashflow1-capa.jpg
+render.log
+__pycache__/
