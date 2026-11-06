@@ -118,30 +118,56 @@ def li(ok, txt):
     sym = '<span style="color:#16A34A">✓</span>' if ok else '<span style="color:#E5484D">✕</span>'
     return f'<div style="display:flex;gap:16px;margin-top:18px;font:700 28px/1.25 Inter">{sym}<div>{txt}</div></div>'
 
-# ---------------- SLIDE 3 — na prática ----------------
+# ---------------- SLIDE 3 — o que o preço está dizendo (v2, 06/11: pedido do Franklin; base: ficha FVG do vault ICT-Core-Content) ----------------
+def two_fvg(W=900, H=430):
+    """Perna forte com dois FVGs: o de cima é testado e respeitado; o de baixo nem é tocado."""
+    o = [f'<svg width="{W}" height="{H}" viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg">']
+    for y in (70, 140, 210, 280, 350):
+        o.append(f'<line x1="0" y1="{y}" x2="900" y2="{y}" stroke="#EEF2F6" stroke-width="2"/>')
+    # FVG de baixo (entre máx. da vela 1 = 330 e mín. da vela 3 = 280) e FVG de cima (máx. vela 3 = 215, mín. vela 5 = 165)
+    o.append('<rect x="70" y="280" width="810" height="50" rx="8" fill="rgba(255,212,59,.35)" stroke="#E0A800" stroke-width="2" stroke-dasharray="8 6"/>')
+    o.append('<rect x="170" y="165" width="710" height="50" rx="8" fill="rgba(37,99,235,.16)" stroke="#2563EB" stroke-width="2" stroke-dasharray="8 6"/>')
+    o.append(candle(90, 360, 340, 330, 375))
+    o.append(candle(140, 345, 235, 225, 350, w=40))
+    o.append(candle(190, 245, 225, 215, 280))
+    o.append(candle(240, 230, 120, 110, 236, w=40))
+    o.append(candle(290, 130, 110, 100, 165))
+    # retração até o FVG de cima e continuação
+    o.append(candle(340, 112, 150, 104, 158, up=False))
+    o.append(candle(390, 150, 185, 145, 196, up=False))
+    o.append(candle(440, 185, 140, 132, 198))
+    o.append(candle(490, 140, 95, 86, 146))
+    o.append(candle(540, 95, 70, 60, 104))
+    o.append(candle(590, 72, 50, 40, 80))
+    o.append(candle(640, 52, 34, 26, 60))
+    o.append('<text x="868" y="196" text-anchor="end" font-family="Inter" font-weight="800" font-size="22" fill="#1D4ED8">1º FVG · testado e respeitado</text>')
+    o.append('<text x="868" y="311" text-anchor="end" font-family="Inter" font-weight="800" font-size="22" fill="#8A6A00">2º FVG · nem foi tocado</text>')
+    o.append('</svg>')
+    return "".join(o)
+
 S3 = f"""
 <div class="circ" style="width:560px;height:560px;right:-280px;top:-340px;background:#2563EB"></div>
-<div class="circ" style="width:900px;height:900px;left:-420px;top:930px;background:#EFF5FF"></div>
+<div class="circ" style="width:900px;height:900px;left:-420px;top:980px;background:#EFF5FF"></div>
 <img class="logo" src="data:image/png;base64,{LOGO}">
-<div class="label">NA PRÁTICA</div>
-<div class="h" style="position:absolute;left:72px;top:212px;font-size:78px;width:960px">
-  FVG é região de interesse.<br><span style="color:#2563EB">Não é ordem pendurada.</span>
+<div class="label">O QUE O PREÇO ESTÁ DIZENDO</div>
+<div class="h" style="position:absolute;left:72px;top:212px;font-size:84px;width:960px">
+  Não voltou ao FVG?<br><span style="color:#2563EB">Isso também é informação.</span>
 </div>
-<div class="card" style="position:absolute;left:72px;top:420px;width:640px;padding:30px 36px 38px">
-  {li(True,"Use junto do seu setup, como contexto")}
-  {li(True,"Defina antes onde a ideia está errada")}
-  {li(False,"Entrar só porque “o gap tem que fechar”")}
-  {li(False,"Mover o stop esperando o preenchimento")}
+<div style="position:absolute;left:72px;top:418px;width:936px;font:400 29px/1.42 Inter;color:#475569">
+  Quando o preço sai rápido e <b style="color:#0B1533">não volta para testar o gap</b>, o mercado está mostrando força naquela direção. Na mesma perna, ele pode respeitar o primeiro FVG e nem tocar o segundo.
 </div>
-<img src="data:image/png;base64,{EXPL}" style="position:absolute;right:10px;top:400px;width:300px">
-<div style="position:absolute;left:72px;top:880px;width:936px;background:#0B1533;border-radius:28px;padding:34px 36px;box-shadow:0 20px 40px rgba(11,21,51,.18)">
-  <div style="font:800 34px/1.25 Inter;color:#fff">Quantos dos FVGs que você marcou foram preenchidos?</div>
-  <div style="font:400 28px/1.4 Inter;color:#C7D2FE;margin-top:10px">Anote no diário. O seu histórico responde melhor que qualquer regra.</div>
+<div class="card" style="position:absolute;left:72px;top:572px;width:936px;padding:16px 18px 10px">
+  {two_fvg(900, 430)}
+  <div class="seal" style="margin-top:2px">Exemplo ilustrativo · sem ativo nem preço</div>
 </div>
-<div style="position:absolute;left:72px;top:1160px;width:936px;font:400 20px/1.35 Inter;color:#94A3B8">
+<div style="position:absolute;left:72px;top:1094px;width:936px;background:#0B1533;border-radius:28px;padding:26px 34px;box-shadow:0 20px 40px rgba(11,21,51,.18)">
+  <div style="font:800 31px/1.25 Inter;color:#fff">Não persiga o preço que foi embora.</div>
+  <div style="font:400 25px/1.4 Inter;color:#C7D2FE;margin-top:8px">No diário: o FVG foi testado? Para onde o preço foi depois?</div>
+</div>
+<div style="position:absolute;left:72px;top:1258px;width:936px;font:400 18px/1.35 Inter;color:#94A3B8">
   Conceito do ICT (há variações entre autores). Conteúdo educativo, não é recomendação de operação.
 </div>
-<div class="foot">tradeyouup.net &nbsp;·&nbsp; 3/3</div>
+<div class="foot" style="bottom:20px">tradeyouup.net &nbsp;·&nbsp; 3/3</div>
 """
 
 with sync_playwright() as p:
