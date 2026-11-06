@@ -1,0 +1,4 @@
+stills/
+*.html
+__pycache__/
+*.wav
