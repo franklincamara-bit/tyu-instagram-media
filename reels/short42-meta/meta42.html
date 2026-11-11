@@ -1,0 +1,371 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Hand;src:url(assets/caveat-latin-700-normal.woff2) format('woff2');font-weight:700}
+@font-face{font-family:Hand;src:url(assets/caveat-latin-400-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:Archivo;src:url(assets/archivo-latin-500-normal.woff2) format('woff2');font-weight:500}@font-face{font-family:Archivo;src:url(assets/archivo-latin-600-normal.woff2) format('woff2');font-weight:600}@font-face{font-family:Archivo;src:url(assets/archivo-latin-700-normal.woff2) format('woff2');font-weight:700}@font-face{font-family:Archivo;src:url(assets/archivo-latin-800-normal.woff2) format('woff2');font-weight:800}@font-face{font-family:Archivo;src:url(assets/archivo-latin-900-normal.woff2) format('woff2');font-weight:900}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#F6F4EE}
+#stage{position:absolute;inset:0}
+svg{position:absolute;left:0;top:0}
+.pose{position:absolute;bottom:-70px;height:900px;transform-origin:50% 100%;opacity:0}
+#cap{position:absolute;left:56px;top:1196px;width:610px;font:800 50px/1.18 Archivo;font-stretch:88%;color:#fff}
+#cap span.box{background:#111827;padding:10px 20px 14px;border-radius:18px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+#cap mark{background:#FFD43B;color:#111827;border-radius:8px;padding:0 6px}
+</style></head><body>
+<div id="stage">
+  <svg id="bg" width="1080" height="1920"></svg>
+  <svg id="main" width="1080" height="1920"></svg>
+  <div id="avatar"></div>
+  <div id="cap"></div>
+  <svg id="top" width="1080" height="1920"></svg>
+</div>
+<script src="assets/rough.js"></script>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const INK='#1E293B', BLUE='#2563EB', RED='#E03131', GREEN='#2F9E44', GRAY='#94A3B8';
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+const easeOut=x=>1-Math.pow(1-x,3);
+const back=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const bg=document.getElementById('bg'), main=document.getElementById('main'), top_=document.getElementById('top');
+const rc=rough.svg(main);
+let SEED=11;
+const R=(o={})=>Object.assign({roughness:1.35,bowing:1.2,stroke:INK,strokeWidth:4.8,disableMultiStroke:true,disableMultiStrokeFill:true,seed:SEED++},o);
+
+/* ---------- fundo: papel de prancheta com grade fina ---------- */
+const defs=el('defs',{},bg);
+const pat=el('pattern',{id:'grid',width:40,height:40,patternUnits:'userSpaceOnUse'},defs);
+el('path',{d:'M40 0H0V40',fill:'none',stroke:'#E7E2D6','stroke-width':1.2},pat);
+el('rect',{width:1080,height:1920,fill:'url(#grid)'},bg);
+
+/* ---------- topo ---------- */
+const logo=el('image',{href:'../../assets/logo.png',x:44,y:52,width:200,height:75},bg);
+const tag=el('text',{x:1036,y:100,'text-anchor':'end','font-family':'Hand','font-weight':700,'font-size':46,fill:BLUE},bg);tag.textContent='erro em câmera lenta';
+const tag2=el('text',{x:1036,y:134,'text-anchor':'end','font-family':'Archivo','font-weight':700,'font-size':19,'letter-spacing':3,fill:GRAY},bg);tag2.textContent='STORYBOARD · SHORT';
+
+/* ---------- estrutura de traços ---------- */
+const strokes=[]; // {kind,t0,t1,...}
+const PANEL={x:60,y:318,w:960,h:840};
+const SLOT_W=150, SLOT_H=SLOT_W*PANEL.h/PANEL.w, SLOT_Y=168, SLOT_X0=45, SLOT_GAP=18;
+function slot(i){return {x:SLOT_X0+i*(SLOT_W+SLOT_GAP), y:SLOT_Y, s:SLOT_W/PANEL.w}}
+
+function addRough(node,t0,t1,owner,fillColor){
+  owner.g.appendChild(node);
+  let paths=[...node.querySelectorAll('path')].filter(p=>p.getAttribute('stroke')&&p.getAttribute('stroke')!=='none');
+  if(fillColor){const fills=paths.filter(p=>p.getAttribute('stroke')===fillColor);paths=paths.filter(p=>!fills.includes(p));
+    fills.forEach(f=>{f.style.opacity=0;strokes.push({kind:'fade',node:f,t0:t1,t1:t1+0.3})})}
+  const lens=paths.map(p=>p.getTotalLength());
+  paths.forEach((p,i)=>{p.style.strokeDasharray=lens[i]+' '+(lens[i]+1);p.style.strokeDashoffset=lens[i];p.setAttribute('stroke-linecap','round')});
+  strokes.push({kind:'path',paths,lens,total:lens.reduce((a,b)=>a+b,0),t0,t1,owner});
+  return node;
+}
+let CLIP=0;
+function addText(str,x,y,size,t0,t1,owner,o={}){
+  const t=el('text',{x,y,'font-family':o.font||'Hand','font-weight':o.weight||700,'font-size':size,fill:o.color||INK,'text-anchor':o.anchor||'start'},owner.g);
+  if(o.ls)t.setAttribute('letter-spacing',o.ls);
+  t.textContent=str;
+  if(o.font==='Archivo'){t.style.opacity=0;strokes.push({kind:'fade',node:t,t0,t1:t0+0.22});return t}
+  const id='c'+(CLIP++);
+  const cp=el('clipPath',{id},owner.g);
+  const r=el('rect',{x:0,y:0,width:0,height:0},cp);
+  t.setAttribute('clip-path',`url(#${id})`);
+  strokes.push({kind:'text',t,r,t0,t1,owner,bb:null});
+  return t;
+}
+function printed(tag,attrs,t0,owner){const e=el(tag,attrs,owner.g);e.style.opacity=0;strokes.push({kind:'fade',node:e,t0,t1:t0+0.3});return e}
+function addFade(node,t0,t1,owner){owner&&owner.g.appendChild(node);node.style.opacity=0;strokes.push({kind:'fade',node,t0,t1});return node}
+
+/* ---------- moldura dos quadros (miniaturas) ---------- */
+const strip=el('g',{},bg);
+for(let i=0;i<6;i++){const s=slot(i);
+  const n=rough.svg(bg).rectangle(s.x,s.y,SLOT_W,SLOT_H,{roughness:1,stroke:'#CBD5E1',strokeWidth:2.4,strokeLineDash:[8,8],seed:500+i});strip.appendChild(n);
+  const tx=el('text',{x:s.x+SLOT_W/2,y:s.y+SLOT_H/2+16,'text-anchor':'middle','font-family':'Hand','font-weight':700,'font-size':46,fill:'#CBD5E1'},strip);tx.textContent=i+1;
+}
+
+/* ---------- painéis ---------- */
+const panels=[];
+function makePanel(i,tIn,tOut,label){
+  const wrap=el('g',{},main);
+  const sh=el('rect',{x:10,y:14,width:PANEL.w,height:PANEL.h,rx:6,fill:'#E4DED0'},wrap);
+  const paper=el('rect',{x:0,y:0,width:PANEL.w,height:PANEL.h,fill:'#FFFFFF'},wrap);
+  const g=el('g',{},wrap);
+  const P={i,wrap,g,tIn,tOut,sh};
+  g.appendChild(rc.rectangle(4,4,PANEL.w-8,PANEL.h-8,R({strokeWidth:5,roughness:.9,seed:900+i})));
+  const lb=el('g',{},g);
+  el('rect',{x:24,y:22,width:150,height:44,rx:8,fill:INK},lb);
+  const lt=el('text',{x:99,y:53,'text-anchor':'middle','font-family':'Archivo','font-weight':800,'font-size':22,'letter-spacing':3,fill:'#fff'},lb);lt.textContent='CENA '+(i+1);
+  if(label){const t2=el('text',{x:192,y:54,'font-family':'Archivo','font-weight':700,'font-size':22,'letter-spacing':2,fill:GRAY},lb);t2.textContent=label}
+  panels.push(P);return P;
+}
+const illus=(P)=>{const t=el('text',{x:30,y:PANEL.h-26,'text-anchor':'start','font-family':'Archivo','font-weight':600,'font-size':20,fill:'#64748B'},P.g);t.textContent='Exemplo ilustrativo';return t};
+
+/* CENA 1 — 10:00, meta batida */
+const P1=makePanel(0,0,6.35,'META BATIDA');
+addRough(rc.circle(170,250,210,R()),0.05,0.5,P1);
+addRough(rc.linearPath([[170,250],[118,220]],R({strokeWidth:7})),0.5,0.58,P1);
+addRough(rc.linearPath([[170,250],[170,165]],R({strokeWidth:6})),0.58,0.66,P1);
+addText('10:00',170,430,72,0.66,0.98,P1,{anchor:'middle'});
+printed('line',{x1:330,y1:620,x2:910,y2:620,stroke:'#CBD5E1','stroke-width':3,'stroke-dasharray':'10 12'},1.0,P1);
+addText('0R',300,628,30,1.0,1.05,P1,{font:'Archivo',weight:700,color:GRAY,anchor:'end'});
+addRough(rc.linearPath([[340,620],[420,575],[470,595],[560,480],[620,500],[720,370],[780,390],[870,260]],R({stroke:GREEN,strokeWidth:7})),1.05,2.9,P1);
+addRough(rc.rectangle(700,120,220,110,R({stroke:GREEN,strokeWidth:6,roughness:1.6})),2.95,3.25,P1);
+addText('+3R',810,205,86,3.2,3.5,P1,{anchor:'middle',color:GREEN});
+addRough(rc.ellipse(270,700,420,160,R()),4.05,4.45,P1);
+addRough(rc.linearPath([[400,640],[470,575],[430,655]],R({strokeWidth:4.5})),4.45,4.55,P1);
+addText('só mais um…',270,722,66,4.6,5.75,P1,{anchor:'middle',color:BLUE});
+
+/* CENA 2 — 10:20 */
+const P2=makePanel(1,6.4,11.05,'10:20');
+addText('10:20',40,165,96,6.45,7.0,P2,{color:BLUE});
+addText('mão',90,265,46,7.1,7.3,P2,{color:GRAY});
+for(let k=0;k<2;k++)addRough(rc.rectangle(80+k*72,290,56,86,R({fill:'#DBEAFE',fillStyle:'hachure',hachureGap:10,fillWeight:2})),7.4+k*.12,7.52+k*.12,P2,'#DBEAFE');
+addRough(rc.linearPath([[245,333],[315,333]],R()),7.66,7.74,P2);addRough(rc.linearPath([[296,315],[318,333],[296,351]],R()),7.74,7.8,P2);
+for(let k=0;k<4;k++)addRough(rc.rectangle(340+k*72,290,56,86,R({stroke:RED,fill:'#FFE3E3',fillStyle:'hachure',hachureGap:10,fillWeight:2})),7.82+k*.09,7.91+k*.09,P2,'#FFE3E3');
+addText('maior',490,440,56,8.0,8.25,P2,{anchor:'middle',color:RED});
+addText('setup A',700,320,60,8.4,8.66,P2);
+addRough(rc.line(690,300,910,300,R({stroke:RED,strokeWidth:7})),8.66,8.8,P2);
+addText('setup C',700,410,60,8.8,9.1,P2,{color:RED});
+printed('line',{x1:60,y1:560,x2:910,y2:560,stroke:'#CBD5E1','stroke-width':3,'stroke-dasharray':'10 12'},9.2,P2);
+addRough(rc.linearPath([[80,560],[420,560],[420,690],[900,690]],R({stroke:RED,strokeWidth:7})),9.3,9.9,P2);
+addText('−1R',660,660,110,9.95,10.35,P2,{anchor:'middle',color:RED});
+
+/* CENA 3 — 10:40 */
+const P3=makePanel(2,11.1,14.65,'10:40');
+addText('10:40',40,165,96,11.12,11.6,P3,{color:BLUE});
+addRough(rc.line(80,420,900,420,R({strokeWidth:5})),11.7,12.1,P3);
+addRough(rc.linearPath([[700,420],[700,250]],R({stroke:GREEN,strokeWidth:6})),12.1,12.25,P3);
+addRough(rc.polygon([[700,250],[800,275],[700,300]],R({stroke:GREEN,fill:'#D3F9D8',fillStyle:'solid'})),12.25,12.4,P3,'#D3F9D8');
+addText('sinal',760,360,48,12.4,12.6,P3,{anchor:'middle',color:GREEN});
+addRough(rc.circle(400,420,70,R({stroke:RED,strokeWidth:7})),12.62,12.85,P3);
+addText('entrou aqui',400,510,52,12.85,13.2,P3,{anchor:'middle',color:RED});
+addRough(rc.curve([[250,300],[290,270],[330,310],[370,270],[410,310]],R({stroke:GRAY,strokeWidth:4})),13.2,13.45,P3);
+addText('pressa',330,250,40,13.45,13.6,P3,{anchor:'middle',color:GRAY});
+printed('line',{x1:60,y1:600,x2:910,y2:600,stroke:'#CBD5E1','stroke-width':3,'stroke-dasharray':'10 12'},13.5,P3);
+addRough(rc.linearPath([[80,600],[480,600],[480,720],[900,720]],R({stroke:RED,strokeWidth:7})),13.55,13.75,P3);
+addText('−1R',700,700,110,13.75,14.15,P3,{anchor:'middle',color:RED});
+
+/* CENA 4 — 11:30 */
+const P4=makePanel(3,14.7,18.95,'11:30');
+addText('11:30',40,165,96,14.72,15.25,P4,{color:BLUE});
+const note4=el('g',{},null);
+el('rect',{x:110,y:240,width:740,height:300,fill:'#FFF3BF'},note4);el('rect',{x:110,y:240,width:740,height:22,fill:'#FFE066'},note4);
+note4.setAttribute('transform','rotate(-2 480 390)');addFade(note4,15.4,15.6,P4);
+const n4g=el('g',{transform:'rotate(-2 480 390)'},P4.g);const N4={g:n4g,owner:P4};
+addText('"recuperar o que',150,360,74,15.7,16.6,N4);
+addText('já era meu"',150,460,74,16.6,17.4,N4);
+printed('line',{x1:60,y1:640,x2:910,y2:640,stroke:'#CBD5E1','stroke-width':3,'stroke-dasharray':'10 12'},17.4,P4);
+addRough(rc.linearPath([[80,640],[480,640],[480,700],[900,700]],R({stroke:RED,strokeWidth:7})),17.45,17.8,P4);
+addText('−0,5R',300,610,100,17.84,18.3,P4,{anchor:'middle',color:RED});
+
+/* CENA 5 — meio-dia: a montanha */
+const P5=makePanel(4,19.0,24.95,'MEIO-DIA');
+addText('10:00 +3R',40,160,70,19.05,19.6,P5,{color:GREEN});
+addText('→',420,160,70,20.4,20.5,P5,{color:GRAY});
+addText('12:00 +0,5R',520,160,70,21.3,21.9,P5,{color:RED});
+addRough(rc.line(150,140,320,128,R({stroke:RED,strokeWidth:7})),21.95,22.12,P5);
+printed('line',{x1:60,y1:660,x2:910,y2:660,stroke:'#CBD5E1','stroke-width':3,'stroke-dasharray':'10 12'},19.6,P5);
+addRough(rc.linearPath([[70,660],[160,560],[210,590],[320,300],[400,380],[480,360],[580,500],[660,480],[760,600],[890,620]],R({stroke:INK,strokeWidth:7})),19.65,21.2,P5);
+addRough(rc.circle(320,300,40,R({stroke:GREEN,strokeWidth:5})),20.0,20.2,P5);
+addText('pico 10:00',320,265,44,20.2,20.45,P5,{anchor:'middle',color:GREEN});
+addText('12:00',890,700,40,21.2,21.35,P5,{anchor:'end',color:GRAY});
+addText('O dia bom também precisa de um fim.',480,790,52,22.6,24.3,P5,{anchor:'middle',color:BLUE});
+
+/* CENA 6 — a regra */
+const P6=makePanel(5,25.0,33.6,'A DECISÃO');
+addText('Meta veio cedo?',40,150,72,25.02,25.7,P6);
+addText('Decida ANTES do pregão.',40,240,72,25.7,26.9,P6,{color:BLUE});
+const card6=el('g',{},null);el('rect',{x:90,y:300,width:780,height:410,rx:14,fill:'#FFF3BF'},card6);el('rect',{x:90,y:300,width:780,height:22,fill:'#FFE066'},card6);
+addFade(card6,26.95,27.15,P6);
+addText('MEU PLANO · META CEDO',130,375,28,27.1,27.3,P6,{font:'Archivo',weight:800,color:'#B08800',ls:3});
+const items6=[['Encerrar o dia',28.0,28.7,28.9],['Reduzir a mão',29.48,30.1,30.3],['Só o setup A',30.6,31.3,31.75]];
+items6.forEach(([t,a,b,tk],k)=>{const y=470+k*95;
+  addRough(rc.rectangle(130,y-44,50,50,R({strokeWidth:4})),a-0.25,a-0.05,P6);
+  addText(t,215,y,64,a,b,P6);
+  addRough(rc.linearPath([[136,y-22],[154,y-2],[190,y-58]],R({stroke:GREEN,strokeWidth:8})),tk,tk+0.2,P6)});
+addText('Escreva no plano.',480,800,68,32.1,32.9,P6,{anchor:'middle',color:RED});
+
+/* ---------- placar do dia (canto inferior esquerdo) ---------- */
+const CK={g:el('g',{},main)};
+const ckTitle=el('text',{x:64,y:1470,'font-family':'Archivo','font-weight':800,'font-size':22,'letter-spacing':3,fill:GRAY},CK.g);ckTitle.textContent='RESULTADO DO DIA';
+const ckVal=el('text',{x:60,y:1590,'font-family':'Archivo','font-weight':900,'font-size':120,fill:INK},CK.g);
+const ckSub=el('text',{x:64,y:1640,'font-family':'Archivo','font-weight':600,'font-size':22,fill:'#64748B'},CK.g);ckSub.textContent='exemplo ilustrativo · em R';
+const SCORE=[[0,'0R',GRAY],[3.2,'+3R',GREEN],[10.0,'+2R',GREEN],[13.75,'+1R','#E8590C'],[17.84,'+0,5R',RED]];
+function updScore(t){let k=0;SCORE.forEach((s,i)=>{if(t>=s[0])k=i});ckVal.textContent=SCORE[k][1];ckVal.setAttribute('fill',SCORE[k][2]);
+  const since=t-SCORE[k][0];const sc=k>0?1+0.18*Math.max(0,1-since/0.3):1;ckVal.setAttribute('transform',`translate(60,1590) scale(${sc}) translate(-60,-1590)`)}
+
+/* ---------- tela final ---------- */
+const END={g:el('g',{},main),t0:33.6};
+END.g.style.opacity=0;
+el('image',{href:'../../assets/logo.png',x:250,y:330,width:580,height:217},END.g);
+addText('Meta veio cedo:',540,700,104,33.95,34.8,END,{anchor:'middle',color:INK});
+addText('qual é a sua regra?',540,815,96,34.8,35.7,END,{anchor:'middle',color:BLUE});
+addRough(rc.line(230,850,850,844,R({stroke:BLUE,strokeWidth:7})),35.7,35.95,END);
+const url=el('text',{x:540,y:950,'text-anchor':'middle','font-family':'Archivo','font-weight':800,'font-size':44,fill:INK},END.g);url.textContent='tradeyouup.net';
+const disc=el('text',{x:540,y:1000,'text-anchor':'middle','font-family':'Archivo','font-weight':500,'font-size':24,fill:'#64748B'},END.g);disc.textContent='Exemplo ilustrativo · valores em R. Conteúdo educativo.';
+
+/* ---------- lápis ---------- */
+const pencil=el('g',{},top_);
+const pin=el('g',{transform:'rotate(-38)'},pencil);
+el('ellipse',{cx:120,cy:34,rx:120,ry:12,fill:'rgba(30,41,59,.12)'},pin);
+el('path',{d:'M0 0 L46 -16 L46 16 Z',fill:'#F2D3A3',stroke:INK,'stroke-width':3,'stroke-linejoin':'round'},pin);
+el('path',{d:'M0 0 L15 -5.2 L15 5.2 Z',fill:INK},pin);
+el('rect',{x:46,y:-16,width:190,height:32,fill:'#FFC94D',stroke:INK,'stroke-width':3},pin);
+el('line',{x1:46,y1:-5,x2:236,y2:-5,stroke:'#E8A93A','stroke-width':3},pin);
+el('rect',{x:236,y:-16,width:24,height:32,fill:'#CBD5E1',stroke:INK,'stroke-width':3},pin);
+el('rect',{x:260,y:-16,width:30,height:32,rx:8,fill:'#F78DA7',stroke:INK,'stroke-width':3},pin);
+
+/* ---------- avatar ---------- */
+const POSES={joinha:'joinha.png',explicando:'explicando.png',celular:'celular-contrariado.png',cansado:'cansado.png'};
+const imgs={};const av=document.getElementById('avatar');
+for(const k in POSES){const im=document.createElement('img');im.src='../../assets/'+POSES[k];im.className='pose';av.appendChild(im);imgs[k]=im}
+const poseTL=[[0,'joinha'],[6.4,'explicando'],[11.1,'celular'],[14.7,'cansado'],[19.0,'explicando'],[25.0,'explicando'],[31.8,'joinha']];
+const AV_CX=880;
+
+/* ---------- legendas ---------- */
+const CAPS=[[0.0,0.9,'Dez horas.'],[1.0,3.55,'Meta do dia batida: <mark>+3R</mark>.'],[4.06,5.95,'E aí vem o <mark>“só mais um”</mark>.'],[6.44,7.3,'10h20:'],[7.64,9.3,'mão <mark>maior</mark>, setup <mark>pior</mark>.'],[9.64,10.9,'<mark>−1R</mark>.'],[11.14,12.0,'10h40:'],[12.28,13.4,'entrou <mark>sem esperar</mark>.'],[13.7,14.5,'<mark>−1R</mark>.'],[14.7,15.5,'11h30:'],[15.78,17.6,'tentando recuperar o que <mark>já era seu</mark>.'],[17.84,18.9,'<mark>−0,5R</mark>.'],[19.02,19.8,'Meio-dia:'],[20.0,22.3,'o dia de <mark>+3R</mark> fecha em <mark>+0,5R</mark>.'],[22.56,24.7,'O dia bom também precisa de <mark>um fim</mark>.'],[24.98,28.0,'Decida <mark>antes do pregão</mark> o que fazer quando a meta vier cedo:'],[28.0,29.3,'<mark>encerrar</mark> o dia,'],[29.48,30.28,'<mark>reduzir</mark> a mão'],[30.28,31.74,'ou operar <mark>só o setup A</mark>.'],[31.74,33.5,'E escreva <mark>no plano</mark>.']];
+const cap=document.getElementById('cap');let capCur=-2;
+
+/* ---------- render ---------- */
+function panelState(P,t){
+  // entrada: fade rápido; saída: voa para a miniatura
+  let x=PANEL.x,y=PANEL.y,s=1,op=1;
+  if(t<P.tIn-0.001&&P.i>0){op=0}
+  else if(t<P.tIn+0.25&&P.i>0){op=easeOut(clamp((t-P.tIn)/0.25));s=0.96+0.04*op}
+  const fly=0.5;
+  if(t>=P.tOut){const k=ease(clamp((t-P.tOut)/fly));const S=slot(P.i);x=PANEL.x+(S.x-PANEL.x)*k;y=PANEL.y+(S.y-PANEL.y)*k;s=1+(S.s-1)*k;P.sh.style.opacity=1-k}
+  else P.sh.style.opacity=1;
+  const cx=PANEL.w/2*(1-s),cy=PANEL.h/2*(1-s);
+  P.wrap.setAttribute('transform',`translate(${x+(t<P.tOut?cx:0)},${y+(t<P.tOut?cy:0)}) scale(${s})`);
+  P.wrap.style.opacity=op;
+  return {x:x+(t<P.tOut?cx:0),y:y+(t<P.tOut?cy:0),s};
+}
+function ownerXY(o,t){ if(o===CK||o===END) return {x:0,y:0,s:1}; const P=o.owner||o; return P.__xy }
+function rot(px,py,deg,cx,cy){const a=deg*Math.PI/180,dx=px-cx,dy=py-cy;return [cx+dx*Math.cos(a)-dy*Math.sin(a),cy+dx*Math.sin(a)+dy*Math.cos(a)]}
+
+/* ---- lápis: percurso contínuo, com aceleração de mão e voo levantado entre traços ---- */
+const smooth=x=>x*x*(3-2*x);
+const handEase=(p,k)=>(1-k)*p+k*smooth(p);           // acelera no começo, freia no fim
+function panelXY(P,t){ // posição pura do painel (sem efeitos colaterais)
+  let x=PANEL.x,y=PANEL.y,s=1;
+  if(t>=P.tIn&&t<P.tIn+0.25&&P.i>0){s=0.96+0.04*easeOut(clamp((t-P.tIn)/0.25))}
+  if(t>=P.tOut){const k=ease(clamp((t-P.tOut)/0.5));const S=slot(P.i);return {x:PANEL.x+(S.x-PANEL.x)*k,y:PANEL.y+(S.y-PANEL.y)*k,s:1+(S.s-1)*k}}
+  return {x:x+PANEL.w/2*(1-s),y:y+PANEL.h/2*(1-s),s};
+}
+function toGlobal(owner,pt,t){
+  let [px,py]=pt;
+  if(owner===N4){[px,py]=rot(px,py,-2,480,390);owner=P4}
+  if(owner===CK||owner===END)return [px,py];
+  const xy=panelXY(owner,t);return [xy.x+px*xy.s,xy.y+py*xy.s];
+}
+// amostra cada traço: tinta + trechos "no ar" quando o caminho salta (subcaminhos)
+function prepPath(s){
+  const S=[];let G=0,T=0,last=null;
+  s.paths.forEach((pa,i)=>{const L=s.lens[i];const n=Math.max(2,Math.ceil(L/7));
+    for(let j=0;j<=n;j++){const d=L*j/n;const q=pa.getPointAtLength(d);
+      if(last){const dd=Math.hypot(q.x-last.x,q.y-last.y);
+        if(dd>14){T+=dd*0.55;S.push({x:last.x,y:last.y,G,T:T-dd*0.55,air:0});S.push({x:q.x,y:q.y,G,T,air:1})}
+        else{const di=Math.min(dd,L/n);G+=di;T+=dd}}
+      S.push({x:q.x,y:q.y,G,T,air:0});last=q}
+    G=s.lens.slice(0,i+1).reduce((a,b)=>a+b,0);
+  });
+  s.S=S;s.T=T;s.start=[S[0].x,S[0].y];s.end=[S[S.length-1].x,S[S.length-1].y];
+}
+function samplePath(s,u){ // u em 0..1 do percurso total
+  const T=u*s.T,S=s.S;let lo=0,hi=S.length-1;
+  while(hi-lo>1){const m=(lo+hi)>>1;if(S[m].T<=T)lo=m;else hi=m}
+  const a=S[lo],b=S[hi],k=b.T>a.T?(T-a.T)/(b.T-a.T):0;
+  const inAir=b.air===1&&b.G===a.G&&Math.hypot(b.x-a.x,b.y-a.y)>14;
+  return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,G:a.G+(b.G-a.G)*k,lift:inAir?Math.sin(Math.PI*k):0};
+}
+function prepText(s){const b=s.bb=s.bb||s.t.getBBox();const fs=+s.t.getAttribute('font-size');
+  s.fs=fs;s.mid=b.y+b.height*0.58;s.start=[b.x,s.mid];s.end=[b.x+b.width,s.mid]}
+function textPen(s,p){const b=s.bb,x=b.x+b.width*p,fs=s.fs;
+  // laço da escrita preso ao avanço das letras (≈ uma volta por letra)
+  const ph=2*Math.PI*(x-b.x)/(fs*0.36);
+  return [x+Math.cos(ph)*fs*0.05,s.mid+Math.sin(ph)*fs*0.16]}
+const penStrokes=[];
+function prepPen(){strokes.forEach(s=>{if(s.nopen||s.kind==='fade')return;
+  if(s.kind==='path')prepPath(s);else prepText(s);penStrokes.push(s)});
+  penStrokes.sort((a,b)=>a.t0-b.t0);
+  // garante tempo de deslocamento entre traços proporcional à distância (mão não teletransporta)
+  for(let i=0;i+1<penStrokes.length;i++){const a=penStrokes[i],b=penStrokes[i+1];
+    const A=toGlobal(a.owner,a.end,a.t1),B=toGlobal(b.owner,b.start,b.t0);
+    const need=Math.max(0.1,Math.hypot(B[0]-A[0],B[1]-A[1])/1500),gap=b.t0-a.t1;
+    if(gap<need){const def=need-gap;const ta=Math.min(def/2,0.3*(a.t1-a.t0));const tb=Math.min(def-ta,0.3*(b.t1-b.t0));a.t1-=ta;b.t0+=tb}}}
+function strokeP(s,t){const p=clamp((t-s.t0)/(s.t1-s.t0));return s.kind==='text'?handEase(p,0.35):handEase(p,0.7)}
+function penAt(t){
+  let act=null;for(const s of penStrokes){if(t>=s.t0&&t<s.t1)act=s}
+  if(act){const p=strokeP(act,t);
+    if(act.kind==='path'){const q=samplePath(act,p);const g=toGlobal(act.owner,[q.x,q.y],t);return {x:g[0],y:g[1],lift:q.lift,op:1}}
+    const g=toGlobal(act.owner,textPen(act,p),t);return {x:g[0],y:g[1],lift:0,op:1}}
+  let prev=null,next=null;
+  for(const s of penStrokes){if(s.t1<=t&&(!prev||s.t1>prev.t1))prev=s;if(s.t0>t&&(!next||s.t0<next.t0))next=s}
+  const A=prev&&toGlobal(prev.owner,prev.end,prev.t1), B=next&&toGlobal(next.owner,next.start,next.t0);
+  if(prev&&next){const gap=next.t0-prev.t1;
+    const fly=Math.min(gap,0.55);const tf=next.t0-fly;
+    if(t>=tf){const u=smooth(clamp((t-tf)/fly));const d=Math.hypot(B[0]-A[0],B[1]-A[1]);
+      const from=gap>2.2?[B[0]+70,B[1]-90]:A;
+      return {x:from[0]+(B[0]-from[0])*u,y:from[1]+(B[1]-from[1])*u,lift:Math.sin(Math.PI*u)*Math.min(1,d/250)+(gap>2.2?1-u:0),op:gap>2.2?clamp((t-tf)/0.2):1}}
+    // parado entre traços: levanta um pouco e respira; em pausas longas sai de cena
+    const w=t-prev.t1;const lift=Math.min(1,w/0.25)*0.6;
+    return {x:A[0]+Math.sin(w*2.1)*4,y:A[1]+Math.cos(w*1.7)*3,lift,op:gap>2.2?1-clamp((w-0.35)/0.25):1}}
+  if(prev){const w=t-prev.t1;return {x:A[0],y:A[1],lift:Math.min(1,w/0.25),op:1-clamp((w-0.4)/0.3)}}
+  if(next){const w=next.t0-t;return {x:B[0]+70,y:B[1]-90,lift:1,op:1-clamp((w-0.2)/0.2)}}
+  return {x:0,y:0,lift:0,op:0};
+}
+let penReady=false;
+
+window.renderAt=function(t){
+  if(!penReady){prepPen();penReady=true}
+  panels.forEach(P=>P.__xy=panelState(P,t));
+  N4.__xy=P4.__xy;
+  for(const s of strokes){
+    const p=clamp((t-s.t0)/(s.t1-s.t0));
+    if(s.kind==='path'){
+      let d;
+      if(s.S){const q=samplePath(s,strokeP(s,t));d=p>=1?s.total:(p<=0?0:q.G)}else d=p*s.total;
+      s.paths.forEach((pa,i)=>{const L=s.lens[i];const u=clamp(d/L);pa.style.strokeDashoffset=L*(1-u);d-=L});
+      s.paths.forEach(pa=>pa.style.visibility=p>0?'visible':'hidden');
+    }else if(s.kind==='text'){
+      if(!s.bb){s.bb=s.t.getBBox()}
+      const b=s.bb;s.r.setAttribute('x',b.x-10);s.r.setAttribute('y',b.y-30);s.r.setAttribute('height',b.height+60);
+      const e=p<=0?0:p>=1?1:strokeP(s,t);
+      s.r.setAttribute('width',p>=1?b.width+40:Math.max(0,b.width*e+10));
+    }else if(s.kind==='fade'){s.node.style.opacity=p}
+  }
+  // lápis
+  const P_=penAt(t), P2_=penAt(t-1/30);
+  const vx=P_.x-P2_.x;
+  const lean=clamp(vx*0.35,-7,7);
+  const lift=P_.lift*22;
+  pencil.setAttribute('transform',`translate(${P_.x},${P_.y-lift}) rotate(${lean})`);
+  pin.firstChild.setAttribute('cy',34+lift*1.2);pin.firstChild.setAttribute('cx',120-lift*0.6);
+  pencil.style.opacity=P_.op;
+  updScore(t);
+  // checklist e fim
+  CK.g.style.opacity=1-clamp((t-END.t0)/0.35);
+  END.g.style.opacity=clamp((t-END.t0-0.2)/0.4);
+  cap.style.opacity=1-clamp((t-END.t0)/0.25);
+  // avatar
+  let cur=0;for(let k=0;k<poseTL.length;k++)if(t>=poseTL[k][0])cur=k;
+  const since=t-poseTL[cur][0];
+  for(const k in imgs)imgs[k].style.opacity=0;
+  const im=imgs[poseTL[cur][1]];
+  const pop=cur>0?back(clamp(since/0.35)):1;
+  const breathe=1+Math.sin(t*2.4)*0.006, sway=Math.sin(t*1.3)*0.6;
+  const endShift=t>END.t0?ease(clamp((t-END.t0)/0.6))*-200:0;
+  const w=im.naturalWidth*900/im.naturalHeight;
+  im.style.left=(AV_CX-w/2+endShift)+'px';
+  im.style.opacity=1;
+  im.style.transform=`rotate(${sway}deg) scale(${(0.92+0.08*pop)*1},${(0.92+0.08*pop)*breathe})`;
+  if(cur>0&&since<0.12){const prev=imgs[poseTL[cur-1][1]];prev.style.opacity=1-since/0.12;prev.style.left=im.style.left}
+  // legenda
+  let ci=-1;CAPS.forEach((c,k)=>{if(t>=c[0]-0.05&&t<c[1])ci=k});
+  if(ci!==capCur){cap.innerHTML=ci>=0?`<span class="box">${CAPS[ci][2]}</span>`:'';capCur=ci}
+  if(ci>=0){const u=clamp((t-CAPS[ci][0]+0.05)/0.14);cap.style.transform=`translateY(${(1-u)*14}px)`;cap.style.opacity=Math.min(u,1-clamp((t-END.t0)/0.25))}
+};
+// exporta a linha do tempo do lápis para o som
+window.penIntervals=()=>{if(!penReady){prepPen();penReady=true}return strokes.filter(s=>s.kind!=='fade'&&!s.nopen).map(s=>[s.t0,s.t1,s.kind])};
+Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>{document.fonts.ready.then(()=>{renderAt(0);window.READY=true})});
+</script></body></html>
