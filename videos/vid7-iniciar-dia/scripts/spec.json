@@ -1,0 +1,251 @@
+{
+ "menu": {
+  "snap": "09-config-atual",
+  "boxes": {
+   "iniciar": "Iniciar Dia",
+   "page": "Registre sua leitura pré-mercado"
+  }
+ },
+ "apt1": {
+  "snap": "01-apt-sono",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Como foi seu sono?",
+    "contains"
+   ],
+   "step": [
+    "Próximo",
+    "exact"
+   ],
+   "opts": [
+    "Péssimo",
+    "contains"
+   ],
+   "card": [
+    "Voltar",
+    "contains"
+   ]
+  }
+ },
+ "apt2": {
+  "snap": "02-apt-energia",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Seu nível de energia?",
+    "contains"
+   ],
+   "step": [
+    "Próximo",
+    "exact"
+   ],
+   "opts": [
+    "1\n",
+    "contains"
+   ],
+   "card": [
+    "Voltar",
+    "contains"
+   ]
+  }
+ },
+ "apt3": {
+  "snap": "03-apt-clareza",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Clareza mental agora?",
+    "contains"
+   ],
+   "step": [
+    "Próximo",
+    "exact"
+   ],
+   "opts": [
+    "1\n",
+    "contains"
+   ],
+   "card": [
+    "Voltar",
+    "contains"
+   ]
+  }
+ },
+ "apt4": {
+  "snap": "04-apt-ansiedade",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Nível de ansiedade?",
+    "contains"
+   ],
+   "step": [
+    "Próximo",
+    "exact"
+   ],
+   "opts": [
+    "1\n",
+    "contains"
+   ],
+   "card": [
+    "Voltar",
+    "contains"
+   ]
+  }
+ },
+ "apt5": {
+  "snap": "05-apt-irritacao",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Nível de irritação?",
+    "contains"
+   ],
+   "step": [
+    "Próximo",
+    "exact"
+   ],
+   "opts": [
+    "1\n",
+    "contains"
+   ],
+   "card": [
+    "Voltar",
+    "contains"
+   ]
+  }
+ },
+ "apt6": {
+  "snap": "06-apt-autocontrole",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Autocontrole percebido?",
+    "contains"
+   ],
+   "step": [
+    "Próximo",
+    "exact"
+   ],
+   "opts": [
+    "1\n",
+    "contains"
+   ],
+   "card": [
+    "Voltar",
+    "contains"
+   ]
+  }
+ },
+ "apt7": {
+  "snap": "07-apt-sente",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "q": [
+    "Como você se sente agora?",
+    "contains"
+   ],
+   "gerar": "Gerar Score",
+   "calmo": [
+    "Calmo",
+    "contains"
+   ]
+  }
+ },
+ "apt8": {
+  "snap": "08-apt-resultado",
+  "scroll": "Aptidão para Operar",
+  "boxes": {
+   "score": "Aptidão Alta",
+   "num": "80"
+  }
+ },
+ "cfg": {
+  "snap": "10-config-opcoes",
+  "scroll": "Configuração de Disciplina",
+  "top": 200,
+  "boxes": {
+   "title": "Configuração de Disciplina",
+   "sim": "Sim, considerar como quebra de disciplina",
+   "nao": "Não, não considerar como quebra",
+   "nota": [
+    "a nova seleção passa a valer a partir de hoje",
+    "contains"
+   ],
+   "alterar": "Alterar configuração"
+  }
+ },
+ "form": {
+  "snap": "12-bias-escolhido",
+  "scroll": "Data",
+  "top": 120,
+  "boxes": {
+   "data": [
+    "13/11/2026",
+    "exact"
+   ],
+   "bias": "🟢 Altista",
+   "biaslbl": "Bias do Dia *"
+  }
+ },
+ "biasopen": {
+  "snap": "11-bias-aberto",
+  "scroll": "Data",
+  "top": 120,
+  "boxes": {
+   "alt": "🟢 Altista",
+   "bai": "🔴 Baixista",
+   "neu": "⚪ Neutro"
+  },
+  "js": "(()=>{const t=[...document.querySelectorAll('[role=combobox]')].find(b=>b.textContent.includes('Selecione o viés')); window.__fix=()=>{const r=t.getBoundingClientRect(); const w=document.querySelector('[data-radix-popper-content-wrapper]'); if(w){w.style.transform=`translate(${r.left}px, ${r.bottom+6}px)`; w.style.minWidth=r.width+'px'; w.style.position='fixed'; w.style.top='0'; w.style.left='0';}}; })()"
+ },
+ "opt": {
+  "snap": "13-opcionais",
+  "scroll": "Análise Geral para o Dia",
+  "top": 110,
+  "boxes": {
+   "a1": "Análise Geral para o Dia",
+   "a2": "Pontos Relevantes no Gráfico",
+   "a3": "Setups Planejados",
+   "a4": "Observações"
+  }
+ },
+ "opt2": {
+  "snap": "13-opcionais",
+  "scroll": "Print do Gráfico",
+  "top": 380,
+  "boxes": {
+   "print": [
+    "Enviar imagem",
+    "contains"
+   ],
+   "salvar": "Salvar Leitura do Dia"
+  }
+ },
+ "saved": {
+  "snap": "14-pos-salvar",
+  "scroll": "Data",
+  "top": 120,
+  "boxes": {
+   "reg": [
+    "Registrado:",
+    "contains"
+   ],
+   "edit": [
+    "Editar Leitura",
+    "contains"
+   ],
+   "bias": "🟢 Altista"
+  }
+ },
+ "novo": {
+  "snap": "15-novotrade",
+  "scroll": "Direção do BIAS",
+  "top": 300,
+  "boxes": {
+   "badge": "Bias do dia: 🟢 Altista",
+   "dir": "Direção do BIAS"
+  }
+ }
+}
