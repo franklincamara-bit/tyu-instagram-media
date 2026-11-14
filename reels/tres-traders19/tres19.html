@@ -1,0 +1,364 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Hand;src:url(assets/caveat-latin-700-normal.woff2) format('woff2');font-weight:700}
+@font-face{font-family:Hand;src:url(assets/caveat-latin-400-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:Archivo;src:url(assets/archivo-latin-500-normal.woff2) format('woff2');font-weight:500}@font-face{font-family:Archivo;src:url(assets/archivo-latin-600-normal.woff2) format('woff2');font-weight:600}@font-face{font-family:Archivo;src:url(assets/archivo-latin-700-normal.woff2) format('woff2');font-weight:700}@font-face{font-family:Archivo;src:url(assets/archivo-latin-800-normal.woff2) format('woff2');font-weight:800}@font-face{font-family:Archivo;src:url(assets/archivo-latin-900-normal.woff2) format('woff2');font-weight:900}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#F6F4EE}
+#stage{position:absolute;inset:0}
+svg{position:absolute;left:0;top:0}
+.pose{position:absolute;bottom:-70px;height:900px;transform-origin:50% 100%;opacity:0}
+#cap{position:absolute;left:56px;top:1196px;width:610px;font:800 50px/1.18 Archivo;font-stretch:88%;color:#fff}
+#cap span.box{background:#111827;padding:10px 20px 14px;border-radius:18px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+#cap mark{background:#FFD43B;color:#111827;border-radius:8px;padding:0 6px}
+</style></head><body>
+<div id="stage">
+  <svg id="bg" width="1080" height="1920"></svg>
+  <svg id="main" width="1080" height="1920"></svg>
+  <div id="avatar"></div>
+  <div id="cap"></div>
+  <svg id="top" width="1080" height="1920"></svg>
+</div>
+<script src="assets/rough.js"></script>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const INK='#1E293B', BLUE='#2563EB', RED='#E03131', GREEN='#2F9E44', GRAY='#94A3B8';
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+const easeOut=x=>1-Math.pow(1-x,3);
+const back=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const bg=document.getElementById('bg'), main=document.getElementById('main'), top_=document.getElementById('top');
+const rc=rough.svg(main);
+let SEED=11;
+const R=(o={})=>Object.assign({roughness:1.35,bowing:1.2,stroke:INK,strokeWidth:4.8,disableMultiStroke:true,disableMultiStrokeFill:true,seed:SEED++},o);
+
+/* ---------- fundo: papel de prancheta com grade fina ---------- */
+const defs=el('defs',{},bg);
+const pat=el('pattern',{id:'grid',width:40,height:40,patternUnits:'userSpaceOnUse'},defs);
+el('path',{d:'M40 0H0V40',fill:'none',stroke:'#E7E2D6','stroke-width':1.2},pat);
+el('rect',{width:1080,height:1920,fill:'url(#grid)'},bg);
+
+/* ---------- topo ---------- */
+const logo=el('image',{href:'../../assets/logo.png',x:44,y:52,width:200,height:75},bg);
+const tag=el('text',{x:1036,y:100,'text-anchor':'end','font-family':'Hand','font-weight':700,'font-size':46,fill:BLUE},bg);tag.textContent='mesmo stop';
+const tag2=el('text',{x:1036,y:134,'text-anchor':'end','font-family':'Archivo','font-weight':700,'font-size':19,'letter-spacing':3,fill:GRAY},bg);tag2.textContent='STORYBOARD · REEL';
+
+/* ---------- estrutura de traços ---------- */
+const strokes=[]; // {kind,t0,t1,...}
+const PANEL={x:60,y:318,w:960,h:840};
+const SLOT_W=150, SLOT_H=SLOT_W*PANEL.h/PANEL.w, SLOT_Y=168, SLOT_X0=45, SLOT_GAP=18;
+function slot(i){return {x:SLOT_X0+i*(SLOT_W+SLOT_GAP), y:SLOT_Y, s:SLOT_W/PANEL.w}}
+
+function addRough(node,t0,t1,owner,fillColor){
+  owner.g.appendChild(node);
+  let paths=[...node.querySelectorAll('path')].filter(p=>p.getAttribute('stroke')&&p.getAttribute('stroke')!=='none');
+  if(fillColor){const fills=paths.filter(p=>p.getAttribute('stroke')===fillColor);paths=paths.filter(p=>!fills.includes(p));
+    fills.forEach(f=>{f.style.opacity=0;strokes.push({kind:'fade',node:f,t0:t1,t1:t1+0.3})})}
+  const lens=paths.map(p=>p.getTotalLength());
+  paths.forEach((p,i)=>{p.style.strokeDasharray=lens[i]+' '+(lens[i]+1);p.style.strokeDashoffset=lens[i];p.setAttribute('stroke-linecap','round')});
+  strokes.push({kind:'path',paths,lens,total:lens.reduce((a,b)=>a+b,0),t0,t1,owner});
+  return node;
+}
+let CLIP=0;
+function addText(str,x,y,size,t0,t1,owner,o={}){
+  const t=el('text',{x,y,'font-family':o.font||'Hand','font-weight':o.weight||700,'font-size':size,fill:o.color||INK,'text-anchor':o.anchor||'start'},owner.g);
+  if(o.ls)t.setAttribute('letter-spacing',o.ls);
+  t.textContent=str;
+  if(o.font==='Archivo'){t.style.opacity=0;strokes.push({kind:'fade',node:t,t0,t1:t0+0.22});return t}
+  const id='c'+(CLIP++);
+  const cp=el('clipPath',{id},owner.g);
+  const r=el('rect',{x:0,y:0,width:0,height:0},cp);
+  t.setAttribute('clip-path',`url(#${id})`);
+  strokes.push({kind:'text',t,r,t0,t1,owner,bb:null});
+  return t;
+}
+function printed(tag,attrs,t0,owner){const e=el(tag,attrs,owner.g);e.style.opacity=0;strokes.push({kind:'fade',node:e,t0,t1:t0+0.3});return e}
+function addFade(node,t0,t1,owner){owner&&owner.g.appendChild(node);node.style.opacity=0;strokes.push({kind:'fade',node,t0,t1});return node}
+
+/* ---------- moldura dos quadros (miniaturas) ---------- */
+const strip=el('g',{},bg);
+for(let i=0;i<6;i++){const s=slot(i);
+  const n=rough.svg(bg).rectangle(s.x,s.y,SLOT_W,SLOT_H,{roughness:1,stroke:'#CBD5E1',strokeWidth:2.4,strokeLineDash:[8,8],seed:500+i});strip.appendChild(n);
+  const tx=el('text',{x:s.x+SLOT_W/2,y:s.y+SLOT_H/2+16,'text-anchor':'middle','font-family':'Hand','font-weight':700,'font-size':46,fill:'#CBD5E1'},strip);tx.textContent=i+1;
+}
+
+/* ---------- painéis ---------- */
+const panels=[];
+function makePanel(i,tIn,tOut,label){
+  const wrap=el('g',{},main);
+  const sh=el('rect',{x:10,y:14,width:PANEL.w,height:PANEL.h,rx:6,fill:'#E4DED0'},wrap);
+  const paper=el('rect',{x:0,y:0,width:PANEL.w,height:PANEL.h,fill:'#FFFFFF'},wrap);
+  const g=el('g',{},wrap);
+  const P={i,wrap,g,tIn,tOut,sh};
+  g.appendChild(rc.rectangle(4,4,PANEL.w-8,PANEL.h-8,R({strokeWidth:5,roughness:.9,seed:900+i})));
+  const lb=el('g',{},g);
+  el('rect',{x:24,y:22,width:150,height:44,rx:8,fill:INK},lb);
+  const lt=el('text',{x:99,y:53,'text-anchor':'middle','font-family':'Archivo','font-weight':800,'font-size':22,'letter-spacing':3,fill:'#fff'},lb);lt.textContent='CENA '+(i+1);
+  if(label){const t2=el('text',{x:192,y:54,'font-family':'Archivo','font-weight':700,'font-size':22,'letter-spacing':2,fill:GRAY},lb);t2.textContent=label}
+  panels.push(P);return P;
+}
+const illus=(P)=>{const t=el('text',{x:30,y:PANEL.h-26,'text-anchor':'start','font-family':'Archivo','font-weight':600,'font-size':20,fill:'#64748B'},P.g);t.textContent='Exemplo ilustrativo';return t};
+/* ===== Mesmo stop, três traders (TYU-19) — cenas ===== */
+/* CENA 1 — 10:15, o stop */
+const P1=makePanel(0,0,3.45,'O STOP');
+addRough(rc.circle(150,230,190,R()),0.3,0.62,P1);
+addRough(rc.linearPath([[150,230],[150,168]],R({strokeWidth:7})),0.62,0.68,P1);
+addRough(rc.linearPath([[150,230],[180,250]],R({strokeWidth:6})),0.68,0.74,P1);
+addText('10:15',150,400,76,0.74,1.15,P1,{anchor:'middle',color:BLUE});
+printed('line',{x1:300,y1:560,x2:910,y2:560,stroke:RED,'stroke-width':5,'stroke-dasharray':'16 12'},1.0,P1);
+addText('stop',905,540,44,1.05,1.3,P1,{anchor:'end',color:RED});
+addRough(rc.linearPath([[310,250],[380,300],[430,270],[500,360],[560,330],[640,450],[700,420],[770,560]],R({stroke:INK,strokeWidth:6})),1.3,1.92,P1);
+addRough(rc.circle(770,560,70,R({stroke:RED,strokeWidth:6})),1.92,2.1,P1);
+addRough(rc.rectangle(330,620,540,150,R({stroke:RED,strokeWidth:8,roughness:1.8,fill:'#FFE3E3',fillStyle:'hachure',hachureGap:12,fillWeight:2})),2.1,2.33,P1,'#FFE3E3');
+addText('STOP −1R',600,730,104,2.33,2.95,P1,{anchor:'middle',color:RED});
+illus(P1);
+
+/* CENA 2 — três traders, o mesmo stop */
+const P2=makePanel(1,3.5,6.1,'TRÊS TRADERS');
+[0,1,2].forEach(k=>{const x=50+k*300,cx=x+130,a=3.62+k*0.25;
+  addRough(rc.rectangle(x,130,260,500,R({strokeWidth:4.5})),a,a+0.22,P2);
+  addRough(rc.circle(cx,270,120,R({strokeWidth:5})),a+0.22,a+0.4,P2);
+  addRough(rc.arc(cx,450,190,170,Math.PI,Math.PI*2,false,R({strokeWidth:5})),a+0.4,a+0.55,P2);
+  addText('trader '+(k+1),cx,500,46,a+0.6,a+0.85,P2,{anchor:'middle',color:BLUE});
+  addRough(rc.rectangle(x+45,540,170,62,R({stroke:RED,strokeWidth:5,fill:'#FFE3E3',fillStyle:'solid'})),4.85+k*0.18,4.98+k*0.18,P2,'#FFE3E3');
+  addText('−1R',cx,588,48,4.98+k*0.18,5.12+k*0.18,P2,{font:'Archivo',weight:900,color:RED,anchor:'middle'});
+});
+addText('o mesmo stop',480,740,70,5.25,5.95,P2,{anchor:'middle',color:RED});
+illus(P2);
+
+/* CENA 3 — trader 1 */
+const P3=makePanel(2,6.15,9.95,'TRADER 1');
+addText('O que veio depois:',40,150,64,6.23,6.9,P3);
+const card3=el('g',{},null);el('rect',{x:70,y:210,width:820,height:380,rx:14,fill:'#FFF3BF'},card3);el('rect',{x:70,y:210,width:820,height:20,fill:'#FFE066'},card3);
+addFade(card3,6.5,6.75,P3);
+[['anota o motivo',6.85],['fecha a plataforma',7.6],['volta amanhã',8.7]].forEach(([w,a],k)=>{const y=310+k*105;
+  addRough(rc.rectangle(115,y-48,54,54,R({strokeWidth:4})),a,a+0.15,P3);
+  addText(w,205,y,66,a+0.15,a+0.6,P3);
+  addRough(rc.linearPath([[122,y-24],[140,y-4],[180,y-64]],R({stroke:GREEN,strokeWidth:8})),a+0.6,a+0.8,P3)});
+addRough(rc.rectangle(250,650,460,110,R({stroke:GREEN,strokeWidth:6,roughness:1.6})),9.3,9.55,P3);
+addText('o stop ficou −1R',480,722,56,9.5,9.9,P3,{anchor:'middle',color:GREEN});
+illus(P3);
+
+/* CENA 4 — trader 2 */
+const P4=makePanel(3,10.0,13.5,'TRADER 2');
+addText('entra de novo…',40,160,72,10.25,11.1,P4);
+addRough(rc.rectangle(120,240,720,230,R({stroke:RED,strokeWidth:8,roughness:1.8,fill:'#FFE3E3',fillStyle:'hachure',hachureGap:12,fillWeight:2})),11.15,11.45,P4,'#FFE3E3');
+addText('MÃO 2×',480,410,150,11.45,11.95,P4,{anchor:'middle',color:RED});
+addText('pra recuperar',480,600,82,12.4,13.15,P4,{anchor:'middle',color:INK});
+addRough(rc.line(230,625,730,618,R({stroke:RED,strokeWidth:7})),13.15,13.4,P4);
+illus(P4);
+
+/* CENA 5 — trader 3 */
+const P5=makePanel(4,13.55,17.35,'TRADER 3');
+addRough(rc.rectangle(80,110,380,260,R({strokeWidth:5})),13.75,14.05,P5);
+addRough(rc.linearPath([[110,300],[180,250],[230,280],[300,190],[360,230],[430,170]],R({stroke:GRAY,strokeWidth:4})),14.05,14.35,P5);
+addText('trava.',700,260,110,14.1,14.75,P5,{anchor:'middle',color:BLUE});
+addText('…',700,330,70,14.75,14.9,P5,{anchor:'middle',color:GRAY});
+addText('próximo trade:',40,500,66,15.25,16.1,P5);
+addRough(rc.rectangle(440,560,420,150,R({strokeWidth:6})),16.1,16.3,P5);
+addText('STOP',650,670,100,16.3,16.55,P5,{font:'Archivo',weight:900,color:INK,anchor:'middle'});
+addRough(rc.line(460,700,840,570,R({stroke:RED,strokeWidth:10})),16.55,16.8,P5);
+addText('tirou',300,660,80,16.6,17.05,P5,{anchor:'middle',color:RED});
+illus(P5);
+
+/* CENA 6 — o depois */
+const P6=makePanel(5,17.4,20.45,'O DEPOIS');
+addText('O stop foi igual.',480,140,72,17.56,18.4,P6,{anchor:'middle'});
+[['1','volta amanhã',GREEN,true],['2','mão 2×',RED,false],['3','sem stop',RED,false]].forEach(([n,w,c,ok],k)=>{const x=50+k*300,cx=x+130,a=17.7+k*0.3;
+  addRough(rc.rectangle(x,210,260,380,R({strokeWidth:4.5,stroke:c})),a,a+0.2,P6);
+  addText('trader '+n,cx,280,44,a+0.2,a+0.4,P6,{anchor:'middle',color:GRAY});
+  addText('−1R',cx,370,60,a+0.4,a+0.5,P6,{font:'Archivo',weight:900,color:INK,anchor:'middle'});
+  addText(w,cx,470,50,a+0.5,a+0.8,P6,{anchor:'middle',color:c});
+  if(ok)addRough(rc.linearPath([[cx-40,535],[cx-10,565],[cx+45,500]],R({stroke:GREEN,strokeWidth:9})),a+0.8,a+0.95,P6);
+  else{addRough(rc.line(cx-35,505,cx+35,570,R({stroke:RED,strokeWidth:8})),a+0.8,a+0.88,P6);addRough(rc.line(cx+35,505,cx-35,570,R({stroke:RED,strokeWidth:8})),a+0.88,a+0.96,P6)}});
+addText('O que veio depois, não.',480,720,70,18.82,19.9,P6,{anchor:'middle',color:BLUE});
+addRough(rc.line(150,748,810,742,R({stroke:BLUE,strokeWidth:7})),19.9,20.2,P6);
+const N4={};
+
+/* ---------- selo do stop (canto inferior esquerdo) ---------- */
+const CK={g:el('g',{},main)};
+const ckTitle=el('text',{x:64,y:1470,'font-family':'Archivo','font-weight':800,'font-size':22,'letter-spacing':3,fill:GRAY},CK.g);ckTitle.textContent='O MESMO STOP';
+const ckVal=el('text',{x:60,y:1600,'font-family':'Archivo','font-weight':900,'font-size':130,fill:RED},CK.g);
+const ckSub=el('text',{x:64,y:1645,'font-family':'Archivo','font-weight':600,'font-size':22,fill:'#64748B'},CK.g);ckSub.textContent='exemplo ilustrativo · conta demo';
+const SCORE=[[0,'',GRAY],[2.33,'−1R',RED]];
+function updScore(t){let k=0;SCORE.forEach((s,i)=>{if(t>=s[0])k=i});ckVal.textContent=SCORE[k][1];ckVal.setAttribute('fill',SCORE[k][2]);
+  const since=t-SCORE[k][0];const sc=k>0?1+0.22*Math.max(0,1-since/0.3):1;ckVal.setAttribute('transform',`translate(60,1600) scale(${sc}) translate(-60,-1600)`);
+  ckTitle.style.opacity=k>0?1:0;ckSub.style.opacity=k>0?1:0}
+
+/* ---------- tela final ---------- */
+const END={g:el('g',{},main),t0:20.45};
+END.g.style.opacity=0;
+el('image',{href:'../../assets/logo.png',x:300,y:330,width:480,height:180},END.g);
+addText('Conhece um',540,635,104,20.75,21.4,END,{anchor:'middle',color:INK});
+addText('trader 2?',540,750,110,21.4,22.0,END,{anchor:'middle',color:RED});
+addText('Manda pra ele.',540,855,72,22.1,22.7,END,{anchor:'middle',color:BLUE});
+addRough(rc.line(300,880,780,874,R({stroke:BLUE,strokeWidth:7})),22.7,22.95,END);
+const url=el('text',{x:540,y:968,'text-anchor':'middle','font-family':'Archivo','font-weight':800,'font-size':44,fill:INK},END.g);url.textContent='tradeyouup.net';
+const disc=el('text',{x:540,y:1012,'text-anchor':'middle','font-family':'Archivo','font-weight':500,'font-size':24,fill:'#64748B'},END.g);disc.textContent='Exemplo ilustrativo · conta demo. Conteúdo educativo.';
+
+/* ---------- lápis ---------- */
+const pencil=el('g',{},top_);
+const pin=el('g',{transform:'rotate(-38)'},pencil);
+el('ellipse',{cx:120,cy:34,rx:120,ry:12,fill:'rgba(30,41,59,.12)'},pin);
+el('path',{d:'M0 0 L46 -16 L46 16 Z',fill:'#F2D3A3',stroke:INK,'stroke-width':3,'stroke-linejoin':'round'},pin);
+el('path',{d:'M0 0 L15 -5.2 L15 5.2 Z',fill:INK},pin);
+el('rect',{x:46,y:-16,width:190,height:32,fill:'#FFC94D',stroke:INK,'stroke-width':3},pin);
+el('line',{x1:46,y1:-5,x2:236,y2:-5,stroke:'#E8A93A','stroke-width':3},pin);
+el('rect',{x:236,y:-16,width:24,height:32,fill:'#CBD5E1',stroke:INK,'stroke-width':3},pin);
+el('rect',{x:260,y:-16,width:30,height:32,rx:8,fill:'#F78DA7',stroke:INK,'stroke-width':3},pin);
+
+/* ---------- avatar ---------- */
+const POSES={pare:'pare.png',bracos:'bracos-cruzados.png',caderno:'caderno.png',celular:'celular-contrariado.png',pensativo:'pensativo.png',cansado:'cansado.png',explicando:'explicando.png',joinha:'joinha.png'};
+const imgs={};const av=document.getElementById('avatar');
+for(const k in POSES){const im=document.createElement('img');im.src='../../assets/'+POSES[k];im.className='pose';av.appendChild(im);imgs[k]=im}
+const poseTL=[[0,'pare'],[3.61,'bracos'],[6.23,'caderno'],[10.23,'celular'],[13.8,'pensativo'],[16.38,'cansado'],[17.56,'explicando'],[20.75,'joinha']];
+const AV_CX=880;
+
+/* ---------- legendas ---------- */
+const CAPS=[[0.3,1.3,'10h15.'],[1.44,2.25,'<mark>Stop.</mark>'],[2.33,3.4,'Menos um R.'],[3.61,4.65,'Três traders.'],[4.8,6.05,'O <mark>mesmo</mark> stop.'],[6.23,7.55,'O primeiro <mark>anota o motivo</mark>,'],[7.55,8.6,'fecha a plataforma'],[8.6,9.9,'e <mark>volta amanhã</mark>.'],[10.23,11.25,'O segundo entra de novo,'],[11.25,12.35,'com a <mark>mão dobrada</mark>,'],[12.35,13.5,'pra recuperar.'],[13.8,15.05,'O terceiro <mark>trava</mark>.'],[15.23,16.32,'E no próximo trade,'],[16.38,17.35,'<mark>tira o stop</mark>.'],[17.56,18.65,'O stop foi igual.'],[18.82,20.4,'O que veio depois, <mark>não</mark>.']];
+const cap=document.getElementById('cap');let capCur=-2;
+
+/* ---------- render ---------- */
+function panelState(P,t){
+  // entrada: fade rápido; saída: voa para a miniatura
+  let x=PANEL.x,y=PANEL.y,s=1,op=1;
+  if(t<P.tIn-0.001&&P.i>0){op=0}
+  else if(t<P.tIn+0.25&&P.i>0){op=easeOut(clamp((t-P.tIn)/0.25));s=0.96+0.04*op}
+  const fly=0.5;
+  if(t>=P.tOut){const k=ease(clamp((t-P.tOut)/fly));const S=slot(P.i);x=PANEL.x+(S.x-PANEL.x)*k;y=PANEL.y+(S.y-PANEL.y)*k;s=1+(S.s-1)*k;P.sh.style.opacity=1-k}
+  else P.sh.style.opacity=1;
+  const cx=PANEL.w/2*(1-s),cy=PANEL.h/2*(1-s);
+  P.wrap.setAttribute('transform',`translate(${x+(t<P.tOut?cx:0)},${y+(t<P.tOut?cy:0)}) scale(${s})`);
+  P.wrap.style.opacity=op;
+  return {x:x+(t<P.tOut?cx:0),y:y+(t<P.tOut?cy:0),s};
+}
+function ownerXY(o,t){ if(o===CK||o===END) return {x:0,y:0,s:1}; const P=o.owner||o; return P.__xy }
+function rot(px,py,deg,cx,cy){const a=deg*Math.PI/180,dx=px-cx,dy=py-cy;return [cx+dx*Math.cos(a)-dy*Math.sin(a),cy+dx*Math.sin(a)+dy*Math.cos(a)]}
+
+/* ---- lápis: percurso contínuo, com aceleração de mão e voo levantado entre traços ---- */
+const smooth=x=>x*x*(3-2*x);
+const handEase=(p,k)=>(1-k)*p+k*smooth(p);           // acelera no começo, freia no fim
+function panelXY(P,t){ // posição pura do painel (sem efeitos colaterais)
+  let x=PANEL.x,y=PANEL.y,s=1;
+  if(t>=P.tIn&&t<P.tIn+0.25&&P.i>0){s=0.96+0.04*easeOut(clamp((t-P.tIn)/0.25))}
+  if(t>=P.tOut){const k=ease(clamp((t-P.tOut)/0.5));const S=slot(P.i);return {x:PANEL.x+(S.x-PANEL.x)*k,y:PANEL.y+(S.y-PANEL.y)*k,s:1+(S.s-1)*k}}
+  return {x:x+PANEL.w/2*(1-s),y:y+PANEL.h/2*(1-s),s};
+}
+function toGlobal(owner,pt,t){
+  let [px,py]=pt;
+  if(owner===N4){[px,py]=rot(px,py,-2,480,390);owner=P4}
+  if(owner===CK||owner===END)return [px,py];
+  const xy=panelXY(owner,t);return [xy.x+px*xy.s,xy.y+py*xy.s];
+}
+// amostra cada traço: tinta + trechos "no ar" quando o caminho salta (subcaminhos)
+function prepPath(s){
+  const S=[];let G=0,T=0,last=null;
+  s.paths.forEach((pa,i)=>{const L=s.lens[i];const n=Math.max(2,Math.ceil(L/7));
+    for(let j=0;j<=n;j++){const d=L*j/n;const q=pa.getPointAtLength(d);
+      if(last){const dd=Math.hypot(q.x-last.x,q.y-last.y);
+        if(dd>14){T+=dd*0.55;S.push({x:last.x,y:last.y,G,T:T-dd*0.55,air:0});S.push({x:q.x,y:q.y,G,T,air:1})}
+        else{const di=Math.min(dd,L/n);G+=di;T+=dd}}
+      S.push({x:q.x,y:q.y,G,T,air:0});last=q}
+    G=s.lens.slice(0,i+1).reduce((a,b)=>a+b,0);
+  });
+  s.S=S;s.T=T;s.start=[S[0].x,S[0].y];s.end=[S[S.length-1].x,S[S.length-1].y];
+}
+function samplePath(s,u){ // u em 0..1 do percurso total
+  const T=u*s.T,S=s.S;let lo=0,hi=S.length-1;
+  while(hi-lo>1){const m=(lo+hi)>>1;if(S[m].T<=T)lo=m;else hi=m}
+  const a=S[lo],b=S[hi],k=b.T>a.T?(T-a.T)/(b.T-a.T):0;
+  const inAir=b.air===1&&b.G===a.G&&Math.hypot(b.x-a.x,b.y-a.y)>14;
+  return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,G:a.G+(b.G-a.G)*k,lift:inAir?Math.sin(Math.PI*k):0};
+}
+function prepText(s){const b=s.bb=s.bb||s.t.getBBox();const fs=+s.t.getAttribute('font-size');
+  s.fs=fs;s.mid=b.y+b.height*0.58;s.start=[b.x,s.mid];s.end=[b.x+b.width,s.mid]}
+function textPen(s,p){const b=s.bb,x=b.x+b.width*p,fs=s.fs;
+  // laço da escrita preso ao avanço das letras (≈ uma volta por letra)
+  const ph=2*Math.PI*(x-b.x)/(fs*0.36);
+  return [x+Math.cos(ph)*fs*0.05,s.mid+Math.sin(ph)*fs*0.16]}
+const penStrokes=[];
+function prepPen(){strokes.forEach(s=>{if(s.nopen||s.kind==='fade')return;
+  if(s.kind==='path')prepPath(s);else prepText(s);penStrokes.push(s)});
+  penStrokes.sort((a,b)=>a.t0-b.t0);
+  // garante tempo de deslocamento entre traços proporcional à distância (mão não teletransporta)
+  for(let i=0;i+1<penStrokes.length;i++){const a=penStrokes[i],b=penStrokes[i+1];
+    const A=toGlobal(a.owner,a.end,a.t1),B=toGlobal(b.owner,b.start,b.t0);
+    const need=Math.max(0.1,Math.hypot(B[0]-A[0],B[1]-A[1])/1500),gap=b.t0-a.t1;
+    if(gap<need){const def=need-gap;const ta=Math.min(def/2,0.3*(a.t1-a.t0));const tb=Math.min(def-ta,0.3*(b.t1-b.t0));a.t1-=ta;b.t0+=tb}}}
+function strokeP(s,t){const p=clamp((t-s.t0)/(s.t1-s.t0));return s.kind==='text'?handEase(p,0.35):handEase(p,0.7)}
+function penAt(t){
+  let act=null;for(const s of penStrokes){if(t>=s.t0&&t<s.t1)act=s}
+  if(act){const p=strokeP(act,t);
+    if(act.kind==='path'){const q=samplePath(act,p);const g=toGlobal(act.owner,[q.x,q.y],t);return {x:g[0],y:g[1],lift:q.lift,op:1}}
+    const g=toGlobal(act.owner,textPen(act,p),t);return {x:g[0],y:g[1],lift:0,op:1}}
+  let prev=null,next=null;
+  for(const s of penStrokes){if(s.t1<=t&&(!prev||s.t1>prev.t1))prev=s;if(s.t0>t&&(!next||s.t0<next.t0))next=s}
+  const A=prev&&toGlobal(prev.owner,prev.end,prev.t1), B=next&&toGlobal(next.owner,next.start,next.t0);
+  if(prev&&next){const gap=next.t0-prev.t1;
+    const fly=Math.min(gap,0.55);const tf=next.t0-fly;
+    if(t>=tf){const u=smooth(clamp((t-tf)/fly));const d=Math.hypot(B[0]-A[0],B[1]-A[1]);
+      const from=gap>2.2?[B[0]+70,B[1]-90]:A;
+      return {x:from[0]+(B[0]-from[0])*u,y:from[1]+(B[1]-from[1])*u,lift:Math.sin(Math.PI*u)*Math.min(1,d/250)+(gap>2.2?1-u:0),op:gap>2.2?clamp((t-tf)/0.2):1}}
+    // parado entre traços: levanta um pouco e respira; em pausas longas sai de cena
+    const w=t-prev.t1;const lift=Math.min(1,w/0.25)*0.6;
+    return {x:A[0]+Math.sin(w*2.1)*4,y:A[1]+Math.cos(w*1.7)*3,lift,op:gap>2.2?1-clamp((w-0.35)/0.25):1}}
+  if(prev){const w=t-prev.t1;return {x:A[0],y:A[1],lift:Math.min(1,w/0.25),op:1-clamp((w-0.4)/0.3)}}
+  if(next){const w=next.t0-t;return {x:B[0]+70,y:B[1]-90,lift:1,op:1-clamp((w-0.2)/0.2)}}
+  return {x:0,y:0,lift:0,op:0};
+}
+let penReady=false;
+
+window.renderAt=function(t){
+  if(!penReady){prepPen();penReady=true}
+  panels.forEach(P=>P.__xy=panelState(P,t));
+  N4.__xy=P4.__xy;
+  for(const s of strokes){
+    const p=clamp((t-s.t0)/(s.t1-s.t0));
+    if(s.kind==='path'){
+      let d;
+      if(s.S){const q=samplePath(s,strokeP(s,t));d=p>=1?s.total:(p<=0?0:q.G)}else d=p*s.total;
+      s.paths.forEach((pa,i)=>{const L=s.lens[i];const u=clamp(d/L);pa.style.strokeDashoffset=L*(1-u);d-=L});
+      s.paths.forEach(pa=>pa.style.visibility=p>0?'visible':'hidden');
+    }else if(s.kind==='text'){
+      if(!s.bb){s.bb=s.t.getBBox()}
+      const b=s.bb;s.r.setAttribute('x',b.x-10);s.r.setAttribute('y',b.y-30);s.r.setAttribute('height',b.height+60);
+      const e=p<=0?0:p>=1?1:strokeP(s,t);
+      s.r.setAttribute('width',p>=1?b.width+40:Math.max(0,b.width*e+10));
+    }else if(s.kind==='fade'){s.node.style.opacity=p}
+  }
+  // lápis
+  const P_=penAt(t), P2_=penAt(t-1/30);
+  const vx=P_.x-P2_.x;
+  const lean=clamp(vx*0.35,-7,7);
+  const lift=P_.lift*22;
+  pencil.setAttribute('transform',`translate(${P_.x},${P_.y-lift}) rotate(${lean})`);
+  pin.firstChild.setAttribute('cy',34+lift*1.2);pin.firstChild.setAttribute('cx',120-lift*0.6);
+  pencil.style.opacity=P_.op;
+  updScore(t);
+  // checklist e fim
+  CK.g.style.opacity=1-clamp((t-END.t0)/0.35);
+  END.g.style.opacity=clamp((t-END.t0-0.2)/0.4);
+  cap.style.opacity=1-clamp((t-END.t0)/0.25);
+  // avatar
+  let cur=0;for(let k=0;k<poseTL.length;k++)if(t>=poseTL[k][0])cur=k;
+  const since=t-poseTL[cur][0];
+  for(const k in imgs)imgs[k].style.opacity=0;
+  const im=imgs[poseTL[cur][1]];
+  const pop=cur>0?back(clamp(since/0.35)):1;
+  const breathe=1+Math.sin(t*2.4)*0.006, sway=Math.sin(t*1.3)*0.6;
+  const endShift=t>END.t0?ease(clamp((t-END.t0)/0.6))*-200:0;
+  const w=im.naturalWidth*900/im.naturalHeight;
+  im.style.left=(AV_CX-w/2+endShift)+'px';
+  im.style.opacity=1;
+  im.style.transform=`rotate(${sway}deg) scale(${(0.92+0.08*pop)*1},${(0.92+0.08*pop)*breathe})`;
+  if(cur>0&&since<0.12){const prev=imgs[poseTL[cur-1][1]];prev.style.opacity=1-since/0.12;prev.style.left=im.style.left}
+  // legenda
+  let ci=-1;CAPS.forEach((c,k)=>{if(t>=c[0]-0.05&&t<c[1])ci=k});
+  if(ci!==capCur){cap.innerHTML=ci>=0?`<span class="box">${CAPS[ci][2]}</span>`:'';capCur=ci}
+  if(ci>=0){const u=clamp((t-CAPS[ci][0]+0.05)/0.14);cap.style.transform=`translateY(${(1-u)*14}px)`;cap.style.opacity=Math.min(u,1-clamp((t-END.t0)/0.25))}
+};
+// exporta a linha do tempo do lápis para o som
+window.penIntervals=()=>{if(!penReady){prepPen();penReady=true}return strokes.filter(s=>s.kind!=='fade'&&!s.nopen).map(s=>[s.t0,s.t1,s.kind])};
+Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>{document.fonts.ready.then(()=>{renderAt(0);window.READY=true})});
+</script></body></html>
