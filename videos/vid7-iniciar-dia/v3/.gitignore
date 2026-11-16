@@ -1,0 +1,5 @@
+src/
+up/
+out/
+audio/*.wav
+audio/words.json
