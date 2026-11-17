@@ -1,0 +1,162 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- Meme com avatar #1 (TYU-28): "Hoje eu respeito o stop." / Eu, 3 minutos depois. Reel 10,6 s, sem narração. -->
+<style>
+@font-face{font-family:Hand;src:url(assets/caveat-latin-700-normal.woff2) format('woff2');font-weight:700}
+@font-face{font-family:Archivo;src:url(assets/archivo-latin-600-normal.woff2) format('woff2');font-weight:600}
+@font-face{font-family:Archivo;src:url(assets/archivo-latin-700-normal.woff2) format('woff2');font-weight:700}
+@font-face{font-family:Archivo;src:url(assets/archivo-latin-800-normal.woff2) format('woff2');font-weight:800}
+@font-face{font-family:Archivo;src:url(assets/archivo-latin-900-normal.woff2) format('woff2');font-weight:900}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#F6F7FB;font-family:Archivo}
+#world{position:absolute;inset:0;transform-origin:50% 55%}
+.bg{position:absolute;inset:0}
+#bgA{background:radial-gradient(900px 700px at 60% 60%,#FFFFFF,#EEF1F8)}
+#bgA:after{content:'';position:absolute;inset:0;background-image:linear-gradient(#0B153310 1px,transparent 1px),linear-gradient(90deg,#0B153310 1px,transparent 1px);background-size:60px 60px;opacity:.5}
+#bgB{background:radial-gradient(900px 800px at 50% 62%,#FFE9E9,#FFC9CB 60%,#F59A9E);opacity:0}
+#rays{position:absolute;left:-700px;top:-300px;width:2500px;height:2500px;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,.28) 0 5deg,transparent 5deg 12deg);opacity:0}
+#bgC{background:linear-gradient(180deg,#FFFFFF,#EEF1F8);opacity:0}
+/* barra de meme */
+#bar{position:absolute;left:0;right:0;top:250px;height:330px;background:#fff;box-shadow:0 10px 0 #0B1533}
+.lab{position:absolute;left:60px;right:60px;font-weight:800;font-size:46px;letter-spacing:2px;color:#64748B;text-transform:uppercase}
+.big{position:absolute;left:56px;right:56px;font-weight:900;font-size:96px;line-height:1.0;letter-spacing:-2px;color:#0B1533}
+.big em{font-style:normal;color:#2563EB}
+.big.r em{color:#E5484D}
+/* avatar */
+.pose{position:absolute;opacity:0;transform-origin:50% 100%;filter:drop-shadow(0 26px 30px rgba(11,21,51,.22))}
+/* post-it */
+#note{position:absolute;left:600px;top:700px;width:400px;height:330px;background:#FFE680;transform:rotate(4deg);box-shadow:0 18px 30px rgba(0,0,0,.16);padding:34px 30px}
+#note:before{content:'';position:absolute;left:140px;top:-18px;width:120px;height:40px;background:rgba(255,255,255,.65);transform:rotate(-3deg)}
+#note .h{font:800 26px Archivo;letter-spacing:3px;color:#8A6D00}
+#note .t{font:700 74px/0.95 Hand;color:#0B1533;margin-top:14px}
+#note .x{position:absolute;inset:0;opacity:0}
+/* carimbo */
+#stamp{position:absolute;left:190px;top:930px;width:700px;text-align:center;font:900 150px Archivo;color:#E5484D;border:16px solid #E5484D;border-radius:30px;padding:0 0 10px;background:rgba(255,255,255,.88);opacity:0;letter-spacing:-3px}
+#stamp small{display:block;font:800 36px Archivo;letter-spacing:6px;margin-top:-14px}
+/* figurinhas */
+.stk{position:absolute;opacity:0;transform-origin:50% 50%}
+.bub{background:#fff;border:7px solid #0B1533;border-radius:44px;padding:24px 34px 30px;font:700 66px/1.0 Hand;color:#0B1533;box-shadow:0 16px 0 rgba(11,21,51,.18);white-space:nowrap}
+.bub:after{content:'';position:absolute;width:44px;height:44px;background:#fff;border-right:7px solid #0B1533;border-bottom:7px solid #0B1533;bottom:-27px;left:70px;transform:rotate(45deg)}
+.bub.rt:after{left:auto;right:70px}
+.tagx{font:900 84px Archivo;letter-spacing:-1px;padding:10px 36px 16px;border:7px solid #0B1533;border-radius:22px;box-shadow:0 16px 0 rgba(11,21,51,.2);white-space:nowrap}
+/* contador */
+#cnt{position:absolute;right:60px;top:620px;width:330px;background:#0B1533;border-radius:26px;padding:20px 26px 22px;color:#fff;opacity:0;box-shadow:0 20px 40px rgba(11,21,51,.3)}
+#cnt .h{font:800 24px Archivo;letter-spacing:4px;color:#94A3B8}
+#cnt .v{font:900 110px/1 Archivo;color:#FF6B70;margin-top:6px;transform-origin:0 70%}
+#cnt .s{font:600 21px Archivo;color:#94A3B8;margin-top:6px}
+/* fim */
+#end{position:absolute;inset:0;opacity:0}
+#end .q1{position:absolute;left:60px;right:60px;top:300px;text-align:center;font:900 112px/0.98 Archivo;letter-spacing:-3px;color:#0B1533}
+#end .q1 em{font-style:normal;color:#E5484D}
+#end .q2{position:absolute;left:60px;right:60px;top:600px;text-align:center;font:700 82px/1 Hand;color:#2563EB}
+#end .logo{position:absolute;left:0;right:0;top:1520px;text-align:center}
+#end .logo img{width:330px}
+#end .url{position:absolute;left:0;right:0;top:1660px;text-align:center;font:800 40px Archivo;color:#0B1533}
+#selo{position:absolute;left:60px;top:1525px;font:600 24px Archivo;color:#64748B;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 16px}
+#logoTop{position:absolute;left:60px;top:150px;width:190px}
+#serie{position:absolute;right:60px;top:166px;font:800 22px Archivo;letter-spacing:4px;color:#2563EB;background:#fff;border:3px solid #2563EB;border-radius:999px;padding:8px 20px}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+</style></head><body>
+<div id="world">
+  <div class="bg" id="bgA"></div><div class="bg" id="bgB"><div id="rays"></div></div><div class="bg" id="bgC"></div>
+  <img id="logoTop" src="../../assets/logo.png"><div id="serie">MEME DO TRADER</div>
+  <div id="bar">
+    <div class="lab" id="labA" style="top:40px">Eu, 9h28:</div>
+    <div class="big" id="bigA" style="top:118px">“Hoje eu respeito<br><em>o stop.</em>”</div>
+    <div class="lab" id="labB" style="top:40px;opacity:0">Eu, 9h31:</div>
+    <div class="big r" id="bigB" style="top:118px;opacity:0">3 minutos depois<br>do <em>primeiro stop</em>:</div>
+  </div>
+  <div id="note"><div class="h">REGRA DO DIA</div><div class="t">bateu o stop,<br>fecha e revisa.</div>
+    <svg class="x" id="noteX" viewBox="0 0 400 330"><path d="M30 40 L370 290 M370 40 L30 290" stroke="#E5484D" stroke-width="18" stroke-linecap="round" fill="none"/></svg></div>
+  <img class="pose" id="pJ" src="../../assets/joinha.png">
+  <img class="pose" id="pC" src="../../assets/celular-contrariado.png">
+  <img class="pose" id="pM" src="../../assets/mesa-notebook.png">
+  <img class="pose" id="pK" src="../../assets/cansado.png">
+  <div id="cnt"><div class="h">CONTA DO DIA</div><div class="v" id="cv">−1R</div><div class="s">exemplo ilustrativo</div></div>
+  <div class="stk bub" id="s1" style="left:390px;top:880px">só mais um<br>pra recuperar</div>
+  <div class="stk tagx" id="s2" style="left:70px;top:1090px;background:#FF8A8F">MÃO 2×</div>
+  <div class="stk bub rt" id="s3" style="left:430px;top:1170px">esse stop tá<br>apertado… tira</div>
+  <div class="stk tagx" id="s4" style="left:90px;top:1360px;background:#FFD43B">AGORA VAI</div>
+  <div id="stamp">STOP<small>−1R · 9H28</small></div>
+  <div id="selo">Exemplo ilustrativo · conta demo</div>
+  <div id="end">
+    <div class="q1">A regra durou<br><em>3 minutos.</em></div>
+    <div class="q2">Manda pra quem jurou<br>isso hoje cedo.</div>
+    <div class="logo"><img src="../../assets/logo.png"></div>
+    <div class="url">tradeyouup.net</div>
+  </div>
+</div>
+<div id="flash"></div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+const easeOut=x=>1-Math.pow(1-x,3);
+const back=x=>{const c1=2.2,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const T={stop:2.55,B:3.05,M:5.3,C:8.1,D:10.6};
+const POSE={pJ:{h:880,cx:330,b:1500},pC:{h:900,cx:300,b:1510},pM:{h:700,cx:560,b:1500},pK:{h:640,cx:540,b:1470}};
+for(const k in POSE){const im=$(k);im.style.height=POSE[k].h+'px'}
+function showPose(k,t,t0,t1,jitter){const im=$(k),P=POSE[k];
+  const on=t>=t0&&t<t1;if(!on){im.style.opacity=0;return}
+  const w=im.naturalWidth*P.h/im.naturalHeight;im.style.left=(P.cx-w/2)+'px';im.style.top=(P.b-P.h)+'px';
+  const s=t-t0, pop=t0===0?1:back(clamp(s/0.3));
+  const br=1+Math.sin(t*2.6)*0.008;
+  const jx=jitter?Math.sin(t*41)*4:0, jr=jitter?Math.sin(t*23)*1.2:Math.sin(t*1.4)*0.6;
+  im.style.opacity=t0===0?1:clamp(s/0.08);
+  im.style.transform=`translateX(${jx}px) rotate(${jr}deg) scale(${0.9+0.1*pop},${(0.9+0.1*pop)*br})`;
+}
+function stk(id,t,t0,rot){const e=$(id);const s=t-t0;
+  if(s<0||t>=T.C){e.style.opacity=t>=T.C?1-clamp((t-T.C)/0.15):0;if(s<0)return}
+  else e.style.opacity=clamp(s/0.06);
+  const p=back(clamp(s/0.28));e.style.transform=`rotate(${rot+Math.sin(t*3+rot)*1.2}deg) scale(${0.3+0.7*p})`;
+}
+const CNT=[[T.stop,'−1R'],[5.15,'−3R'],[7.35,'−6R']];
+window.renderAt=function(t){
+  // fundos
+  const b=clamp((t-T.B)/0.12), c=clamp((t-T.C)/0.3);
+  $('bgB').style.opacity=b*(1-c);$('rays').style.opacity=b*(1-c);$('rays').style.transform=`rotate(${t*14}deg)`;
+  $('bgC').style.opacity=c;
+  // zoom lento na fase A; tremida no carimbo e no fim do B
+  let sc=1+0.03*clamp(t/T.stop), sx=0, sy=0;
+  const sh=t-T.stop; if(sh>=0&&sh<0.35){const k=1-sh/0.35;sx=Math.sin(sh*90)*22*k;sy=Math.cos(sh*70)*14*k}
+  if(t>=T.B&&t<T.C){sc=1.0+0.02*Math.sin((t-T.B)*3)}
+  if(t>=T.C)sc=1;
+  $('world').style.transform=`translate(${sx}px,${sy}px) scale(${sc})`;
+  // barra
+  const ab=t<T.B?1:0;
+  $('labA').style.opacity=ab;$('bigA').style.opacity=ab;
+  const bb=t>=T.B&&t<T.C?clamp((t-T.B)/0.1):0;
+  $('labB').style.opacity=bb;$('bigB').style.opacity=bb;
+  $('bigB').style.transform=`translateY(${(1-easeOut(clamp((t-T.B)/0.25)))*30}px)`;
+  $('bar').style.opacity=1-c;
+  $('logoTop').style.opacity=1-c;$('serie').style.opacity=1-c;
+  // post-it
+  const n=$('note');
+  n.style.opacity=t<T.B?1:clamp(1-(t-T.B)/0.15);
+  $('noteX').style.opacity=clamp((t-T.stop-0.25)/0.15);
+  // poses
+  showPose('pJ',t,0,T.B,false);
+  showPose('pC',t,T.B,T.M,true);
+  showPose('pM',t,T.M,T.C,true);
+  showPose('pK',t,T.C+0.15,99,false);
+  // carimbo
+  const st=$('stamp'), ss=t-T.stop;
+  if(ss<0||t>=T.B+0.2){st.style.opacity=t>=T.B?1-clamp((t-T.B)/0.2):0}
+  else{st.style.opacity=1}
+  if(ss>=0){const k=easeOut(clamp(ss/0.14));st.style.transform=`rotate(-8deg) scale(${2.4-1.4*k})`}
+  $('flash').style.opacity=ss>=0&&ss<0.18?0.75*(1-ss/0.18):0;
+  // contador
+  const cn=$('cnt');cn.style.opacity=t>=T.B&&t<T.C?clamp((t-T.B)/0.15):(t>=T.C?1-clamp((t-T.C)/0.15):0);
+  let ci=0;CNT.forEach((x,i)=>{if(t>=x[0])ci=i});$('cv').textContent=CNT[ci][1];
+  const since=t-CNT[ci][0];$('cv').style.transform=`scale(${1+0.35*Math.max(0,1-since/0.3)})`;
+  // figurinhas
+  stk('s1',t,3.45,-4);stk('s2',t,4.55,-7);stk('s3',t,5.75,3);stk('s4',t,6.9,-5);
+  // selo
+  $('selo').style.opacity=t>=T.stop&&t<T.C?1:0;
+  // fim
+  const e=$('end');e.style.opacity=clamp((t-T.C-0.1)/0.3);
+  $('end').querySelector('.q1').style.transform=`scale(${0.85+0.15*back(clamp((t-T.C-0.1)/0.35))})`;
+  const q2=$('end').querySelector('.q2');q2.style.opacity=clamp((t-T.C-0.9)/0.25);
+};
+Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))).then(()=>document.fonts.ready.then(()=>{renderAt(0);window.READY=true}));
+</script></body></html>
