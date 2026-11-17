@@ -1,0 +1,10 @@
+out/
+chk/
+src/
+audio/*.wav
+audio/a16.wav
+audio/narr-b.mp3
+render*.log
+__pycache__/
+chk_capas.jpg
+audio/narr-a.mp3
