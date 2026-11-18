@@ -1,0 +1,16 @@
+Copiar trades entre contas: registre uma vez, revise uma vez
+
+Opera o mesmo trade em duas, três contas? Então provavelmente já escreveu o mesmo debrief três vezes. Ou escreveu em uma e deixou as outras em branco.
+
+Na Trade You Up, quem tem mais de uma conta cadastrada encontra a seção "Cópias (trade copier)" no próprio trade. Toque em "Copiar trade" e escolha:
+
+• Trades já registrados: vieram do NinjaTrader 8 ou você já lançou. Os valores de cada conta ficam como estão; o debrief e as imagens são copiados.
+• Criar trades novos: um trade em cada conta com os mesmos dados, inclusive o resultado.
+
+A decisão foi uma só. A revisão também pode ser.
+
+Quantas contas você opera hoje? 👇
+
+Exemplo ilustrativo, conta demo (tela recriada, resultados ocultos). Conteúdo educativo, não é recomendação de investimento.
+
+#diariodetrade #mesaproprietaria #daytrade #gerenciamentoderisco #psicologiadotrader
