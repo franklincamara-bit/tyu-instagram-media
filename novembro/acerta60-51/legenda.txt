@@ -1,0 +1,24 @@
+Acerta 60% e ainda perde? A matemática explica.
+
+Taxa de acerto é o número que mais chama atenção no diário. Mas ela sozinha não diz se a conta cresce.
+
+Exemplo: 10 trades, 6 acertos de +0,5R e 4 erros de −1R (R = quanto você arrisca por trade).
+• Acertos: 6 × 0,5R = +3R
+• Erros: 4 × 1R = −4R
+• Resultado: −1R, com 60% de acerto.
+
+O acerto mínimo para empatar depende da relação entre ganho médio e perda média:
+• Ganha metade do que perde (0,5) → precisa acertar 67%
+• Ganha igual ao que perde (1) → 50%
+• Ganha 1,5× o que perde → 40%
+• Ganha 2× o que perde → 33%
+
+Conta: acerto mínimo = perda ÷ (ganho + perda). Tudo antes de custos (corretagem, taxas e slippage aumentam esse mínimo).
+
+Antes de mirar no acerto, olhe quanto você ganha e quanto perde. Esses dois números só aparecem se cada trade estiver registrado.
+
+Você sabe o seu ganho médio e a sua perda média? 👇
+
+Exemplo ilustrativo, conta demo. Conteúdo educativo, não é recomendação de investimento.
+
+#diariodetrade #gerenciamentoderisco #daytrade #mesaproprietaria #psicologiadotrader
