@@ -1,0 +1,6 @@
+# VID-3 — Biblioteca de Setups: como cadastrar seus setups (tutorial narrado com quadros, 1:26)
+Produzido em 21/11/2026 (rotina de produção). Motor `render.py` (tutorial-narrado-v2, cópia do VID-6) + **avatar-guia em miniatura** (poses oficiais recortadas, entra caminhando, aponta e "fala" por balão) em `vid3.py`. 8 cenas + tela final com o avatar dando joinha.
+- Prints 800×600 da conta de teste em 21/11 (Gerenciar Setups, Importar da Biblioteca, Novo Setup preenchido, Novo Trade com a lista de setups e o "+" do cadastro rápido). **Nada salvo e nada importado.** Nomes de traders reais trocados no DOM só para o print (Macro PO3 → "Reversão no Macro", JadeCap → "Varredura na Abertura"; rodapé "Trader Demo"). O card novo na lista é montagem visual no DOM. Prints ficam fora do repo (`src/`).
+- Ajustes ao roteiro aprovado, conferidos na tela em 21/11: o "+" do Novo Trade abre um cadastro rápido com **Nome e Descrição** (não só o nome); a lista de Sessões está normal (4 sessões, bug das duplicadas resolvido); a Biblioteca mostra modelos da comunidade (os do topo não citam traders reais).
+- Narração Rafael Valente (ElevenLabs eleven_v4, uma geração) em `narr-elevenlabs.mp3`, cortada por pausas em s1..s8.
+- Render: `python3 vid3.py all` → `out/vid3-final.mp4` (−16 LUFS). Capas: `python3 capa3.py` (3 opções 1280×720).
