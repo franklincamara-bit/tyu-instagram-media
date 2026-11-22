@@ -1,0 +1,15 @@
+Três trades ruins. Três causas diferentes.
+
+A — setup certo, regra seguida, mas o rompimento era falso.
+B — entrou antes da confirmação pra não perder o movimento.
+C — calculou a mão errado e arriscou 2R achando que era 1R.
+
+Qual é erro técnico e qual é falha de disciplina? Responde nos comentários antes de ver o slide 2. 👇
+
+Por que isso importa: erro técnico se corrige estudando. Falha de disciplina se corrige com regra e rotina. Quem mistura os dois passa semanas estudando o setup quando o problema era o clique antecipado.
+
+No seu debrief, cada trade ruim tem uma causa. Dá nome a ela.
+
+Exemplo ilustrativo (conta demo, resultados em R). Conteúdo educativo, não é recomendação de investimento.
+
+#diariodetrade #psicologiadotrader #daytrade #disciplina #gerenciamentoderisco
