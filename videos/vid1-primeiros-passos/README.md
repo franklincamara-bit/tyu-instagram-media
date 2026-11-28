@@ -1,0 +1,6 @@
+# VID-1 — Primeiros passos: as 3 listas antes do primeiro trade (tutorial narrado com quadros, 0:54)
+Produzido em 28/11/2026 (rotina de produção). Motor `render.py` (tutorial-narrado-v2) + avatar-guia em miniatura (`vid1.py`, cópia do `vid3.py`). 5 cenas + tela final ("Próximo vídeo: Como cadastrar seus setups").
+- Prints 800×600 da conta de teste em 28/11: Dashboard, menu Configurações, Gerenciar Setups, Gerenciar Erros, Gerenciar Falhas de Disciplina, Novo Trade (Setup / Modelo; Disciplina do Plano e Registro de Erros). **Nada salvo.** Só para o print: rodapé "Trader Demo", valores do dashboard zerados e nomes/descrições de setups que citavam traders reais trocados no DOM. Prints ficam fora do repo (`src/`).
+- Ajustes ao roteiro aprovado, conferidos na tela: o item do menu chama "Gerenciar Falhas de Disciplina" (botão "Nova Falha"); a menção à nota de Disciplina virou "aparecem na análise de disciplina do seu painel" (card "Análise da Disciplina" do dashboard); o item "Integração NinjaTrader 8" existe no menu (cena 5).
+- Narração Rafael Valente (elevenlabs.io, uma geração; conector recusado) em `narr-elevenlabs.mp3`, cortada por pausas em s1..s5.
+- Render: `python3 vid1.py all` → `out/vid1-final.mp4` (−16 LUFS). Capas: `python3 capa1.py` (3 opções 1280×720).
